@@ -1,0 +1,2477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HCC Metro Bus — Campus shuttle for HCC students</title>
+<meta name="description" content="Hourly shuttle between all 20 HCC campuses. Staff $3, Student $5, Others $7. Up to 25 seats per booking.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* ==========================================================================
+   HCC Metro Bus — landing page.  HTML + CSS only, no JavaScript.
+
+   Every choice the ticket shows is a radio input: route, departure hour,
+   ticket type, seat count. CSS reads them with :checked ~ and reveals the
+   matching text. Selects cannot be read by CSS, which is why From/To/Time
+   are lists rather than dropdowns. Date is the one field CSS cannot
+   mirror, so the ticket does not claim to show it.
+   ========================================================================== */
+:root{
+  --navy:#0A2240; --navy-2:#143A63; --blue:#1E6FD9; --blue-l:#E8F1FD;
+  --amber:#FFC233; --amber-d:#E9A400; --ink:#0D1824; --muted:#5C6E86;
+  --line:#E2E8F2; --line-2:#CBD6E6; --bg:#F5F8FC; --card:#FFFFFF; --ok:#0E9F6E;
+  --ui:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --r:14px; --r-l:22px;
+  --sh:0 1px 2px rgba(10,34,64,.06), 0 8px 24px rgba(10,34,64,.06);
+  --sh-l:0 2px 4px rgba(10,34,64,.06), 0 24px 60px rgba(10,34,64,.12);
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; scroll-padding-top:84px; }
+body{ margin:0; background:var(--bg); color:var(--ink); font:400 16px/1.6 var(--ui); -webkit-font-smoothing:antialiased; }
+img{ max-width:100%; }
+h1,h2,h3{ margin:0; line-height:1.15; letter-spacing:-.02em; }
+p{ margin:0; } ul,ol,dl{ margin:0; padding:0; list-style:none; }
+a{ color:inherit; text-decoration:none; }
+.wrap{ width:min(100% - 40px, 1180px); margin-inline:auto; }
+.skip{ position:absolute; left:-9999px; top:0; z-index:100; background:var(--navy); color:#fff; padding:12px 20px; border-radius:0 0 var(--r) 0; }
+.skip:focus{ left:0; }
+
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; height:52px; padding:0 26px; border:0; border-radius:999px; cursor:pointer; background:var(--navy); color:#fff; font:700 16px/1 var(--ui); box-shadow:0 6px 16px rgba(10,34,64,.22); transition:transform .16s ease, box-shadow .16s ease, background .16s ease; }
+.btn:hover{ background:var(--navy-2); transform:translateY(-2px); box-shadow:0 12px 26px rgba(10,34,64,.26); }
+.btn:active{ transform:translateY(0); }
+.btn-sm{ height:42px; padding:0 20px; font-size:14.5px; }
+.btn-wide{ width:100%; height:56px; font-size:17px; background:var(--amber); color:var(--navy); box-shadow:0 6px 16px rgba(233,164,0,.34); }
+.btn-wide:hover{ background:var(--amber-d); }
+.btn-ghost{ background:transparent; color:var(--navy); box-shadow:inset 0 0 0 2px var(--line-2); }
+.btn-ghost:hover{ background:#fff; box-shadow:inset 0 0 0 2px var(--navy); }
+:focus-visible{ outline:3px solid var(--blue); outline-offset:3px; }
+
+.brand-mark svg{ display:block; width:100%; height:100%; fill:var(--navy); }
+.brand-mark svg .w{ fill:var(--amber); }
+
+.nav{ position:sticky; top:0; z-index:50; background:rgba(245,248,252,.86); backdrop-filter:saturate(180%) blur(14px); -webkit-backdrop-filter:saturate(180%) blur(14px); border-bottom:1px solid var(--line); }
+.nav-in{ display:flex; align-items:center; gap:28px; height:72px; }
+.brand{ display:flex; align-items:center; gap:11px; }
+.brand-mark{ width:34px; height:34px; flex:none; }
+.brand-text{ font:600 18px/1 var(--ui); letter-spacing:-.01em; } .brand-text b{ font-weight:800; }
+.nav-links{ display:flex; gap:26px; margin-left:auto; font-weight:600; font-size:15px; color:var(--muted); }
+.nav-links a{ position:relative; padding:6px 0; }
+.nav-links a::after{ content:""; position:absolute; left:0; right:100%; bottom:0; height:2px; background:var(--amber); border-radius:2px; transition:right .22s ease; }
+.nav-links a:hover{ color:var(--ink); } .nav-links a:hover::after{ right:0; }
+
+.hero{ padding:clamp(48px,7vw,96px) 0 clamp(40px,6vw,80px); overflow:hidden; }
+.hero-in{ display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(24px,4vw,64px); align-items:center; }
+.eyebrow{ display:inline-block; margin-bottom:18px; padding:7px 15px; border-radius:999px; background:var(--blue-l); color:var(--blue); font:700 12.5px/1 var(--ui); letter-spacing:.1em; text-transform:uppercase; }
+.hero h1{ font-size:clamp(2.4rem,5.4vw,4.1rem); font-weight:800; }
+/* the highlight follows each line box; an inline-block bar ran to the edge
+   when the headline wrapped */
+.hl{ background-image:linear-gradient(transparent 58%, var(--amber) 58% 92%, transparent 92%); -webkit-box-decoration-break:clone; box-decoration-break:clone; padding-inline:.04em; }
+.lede{ margin:22px 0 30px; max-width:52ch; font-size:clamp(1rem,1.5vw,1.14rem); color:var(--muted); }
+.hero-cta{ display:flex; flex-wrap:wrap; gap:12px; }
+.stats{ display:flex; flex-wrap:wrap; gap:clamp(20px,3.6vw,46px); margin-top:clamp(32px,5vw,52px); }
+.stats li{ display:flex; flex-direction:column; gap:2px; }
+.stats b{ font:800 clamp(1.6rem,3vw,2.1rem)/1 var(--ui); color:var(--navy); letter-spacing:-.03em; }
+.stats span{ font-size:13.5px; font-weight:600; color:var(--muted); letter-spacing:.03em; }
+
+.hero-art{ display:grid; place-items:center; }
+.road{ position:relative; width:100%; max-width:500px; aspect-ratio:5/4; border-radius:var(--r-l);
+  background: radial-gradient(90% 70% at 50% 18%, #fff 0%, transparent 62%), linear-gradient(170deg,#DCE9FA 0%,#EDF4FD 55%,#F5F8FC 100%);
+  box-shadow:var(--sh-l); overflow:hidden; display:grid; place-items:center; }
+.road::before{ content:""; position:absolute; left:0; right:0; bottom:22%; height:34%; background:linear-gradient(180deg,#2C3E57,#223044); }
+.lane{ position:absolute; left:0; right:0; bottom:calc(22% + 15%); height:5px; background:repeating-linear-gradient(90deg, var(--amber) 0 34px, transparent 34px 72px); animation:lane 1.1s linear infinite; opacity:.95; }
+@keyframes lane{ to{ background-position:-72px 0; } }
+.bus{ position:relative; width:76%; z-index:2; margin-bottom:6%; animation:bob 2.6s ease-in-out infinite; filter:drop-shadow(0 16px 20px rgba(10,34,64,.26)); }
+@keyframes bob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-9px) } }
+.bus .body{ fill:var(--amber); } .bus .roof{ fill:#FFD469; } .bus .glass{ fill:#17304F; }
+.bus .stripe{ fill:var(--navy); } .bus .tyre{ fill:#1B2838; } .bus .hub{ fill:#C9D6E6; } .bus .lamp{ fill:#FFF3CF; }
+
+.sec-head{ max-width:62ch; margin-bottom:clamp(26px,4vw,44px); }
+.sec-head h2{ font-size:clamp(1.8rem,3.4vw,2.6rem); font-weight:800; }
+.sec-head p{ margin-top:12px; color:var(--muted); font-size:clamp(1rem,1.4vw,1.08rem); }
+
+.book{ padding:clamp(40px,6vw,84px) 0; }
+/* position:fixed, not absolute. A visually hidden radio parked at the top
+   of the form is off-screen once you scroll down, so clicking its label
+   made the browser scroll back up to give it focus. Fixed keeps it inside
+   the viewport, so focusing it scrolls nothing. */
+.state{ position:fixed; top:0; left:0; width:1px; height:1px; margin:0; padding:0; border:0; opacity:0; pointer-events:none; }
+.booking-grid{ display:grid; grid-template-columns:1.45fr .95fr; gap:clamp(18px,2.4vw,30px); align-items:start; }
+.panel{ padding:clamp(22px,3vw,34px); background:var(--card); border:1px solid var(--line); border-radius:var(--r-l); box-shadow:var(--sh); }
+.panel-h{ display:flex; align-items:center; gap:11px; margin:30px 0 14px; font:700 15px/1 var(--ui); letter-spacing:.02em; text-transform:uppercase; color:var(--navy); }
+.panel-h:first-child{ margin-top:0; }
+.panel-h i{ font:500 12.5px/1 var(--ui); letter-spacing:0; text-transform:none; color:var(--muted); }
+.step{ display:grid; place-items:center; width:26px; height:26px; flex:none; border-radius:50%; background:var(--navy); color:#fff; font:800 13px/1 var(--ui); }
+
+.row{ display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:end; }
+.row.tall{ align-items:center; }
+.field{ display:flex; flex-direction:column; gap:7px; min-width:0; }
+.lab{ display:flex; align-items:baseline; gap:8px; font:700 13px/1 var(--ui); letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.lab i{ font:500 12px/1 var(--ui); letter-spacing:0; text-transform:none; color:#93A3B8; }
+.sel{ width:100%; height:52px; padding:0 14px; border:1.5px solid var(--line-2); border-radius:var(--r); background:#fff; color:var(--ink); font:500 15.5px/1 var(--ui); transition:border-color .16s ease, box-shadow .16s ease; }
+.sel:hover{ border-color:#A9BBD2; }
+.sel:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 4px rgba(30,111,217,.14); }
+.swap{ display:grid; place-items:center; width:42px; height:52px; color:#93A3B8; }
+.swap svg{ width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* Dropdown, built from radios. CSS cannot read a <select>, so the ticket
+   could never mirror one — but it can read a radio. The closed button
+   shows the chosen value; the panel opens on :focus-within and closes by
+   itself when a label is clicked, because the radio it activates lives
+   outside .dd, so focus leaves the dropdown. */
+.dd{ position:relative; width:100%; min-width:0; }
+.dd:focus{ outline:none; }
+.dd-cur{
+  display:flex; align-items:center; width:100%; height:52px; padding:0 44px 0 14px;
+  border:1.5px solid var(--line-2); border-radius:var(--r); background:#fff;
+  font:500 15.5px/1.25 var(--ui); color:var(--ink); cursor:pointer;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:border-color .16s ease, box-shadow .16s ease;
+}
+.dd:hover .dd-cur{ border-color:#A9BBD2; }
+.dd:focus-within .dd-cur{ border-color:var(--blue); box-shadow:0 0 0 4px rgba(30,111,217,.14); }
+.dd-cur > b{ overflow:hidden; text-overflow:ellipsis; }
+.dd-ar{ position:absolute; right:14px; top:50%; width:18px; height:18px; margin-top:-9px; pointer-events:none; fill:none; stroke:var(--muted); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; transition:transform .18s ease; }
+.dd:focus-within .dd-ar{ transform:rotate(180deg); stroke:var(--blue); }
+
+.dd-panel{
+  display:none; position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:30;
+  max-height:296px; overflow-y:auto; padding:6px;
+  background:#fff; border:1.5px solid var(--line-2); border-radius:var(--r);
+  box-shadow:0 18px 44px rgba(10,34,64,.18); scrollbar-width:thin;
+}
+.dd:focus-within .dd-panel{ display:block; }
+.dd-time .dd-panel{ max-height:260px; }
+.cg{ padding:10px 10px 5px; font:700 10.5px/1 var(--ui); letter-spacing:.11em; text-transform:uppercase; color:#93A3B8; }
+.cg:first-child{ padding-top:4px; }
+.camp,.dd-opt{ display:block; padding:9px 11px; border-radius:10px; cursor:pointer; transition:background .14s ease, color .14s ease; }
+.camp b{ display:block; font:600 14.5px/1.25 var(--ui); }
+.camp i{ display:block; font:500 12.5px/1.3 var(--ui); font-style:normal; color:var(--muted); }
+.dd-opt{ font:600 14.5px/1.25 var(--ui); }
+.camp:hover,.dd-opt:hover{ background:var(--blue-l); }
+
+.fares{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.fare{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:18px 10px 16px; border:1.5px solid var(--line-2); border-radius:var(--r); background:#fff; cursor:pointer; text-align:center; transition:border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease; }
+.fare:hover{ border-color:#A9BBD2; transform:translateY(-2px); }
+.fare-name{ font:700 14px/1 var(--ui); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.fare-price{ font:800 2rem/1.05 var(--ui); letter-spacing:-.03em; color:var(--navy); }
+.fare-price i{ font-style:normal; font-size:1.05rem; vertical-align:.5em; margin-right:1px; }
+.fare-unit{ font-size:12.5px; font-weight:500; color:#93A3B8; }
+
+.qpad{ display:grid; grid-template-columns:repeat(13,1fr); gap:7px; }
+.qbtn{ display:grid; place-items:center; aspect-ratio:1; border-radius:11px; border:1.5px solid var(--line-2); background:#fff; cursor:pointer; font:700 14px/1 var(--ui); color:var(--muted); transition:border-color .14s ease, background .14s ease, color .14s ease, transform .14s ease; }
+.qbtn:hover{ border-color:#A9BBD2; color:var(--ink); transform:translateY(-1px); }
+
+.ticket{ position:sticky; top:92px; }
+.tk{ position:relative; padding:clamp(20px,2.6vw,28px); background:radial-gradient(120% 60% at 50% 0%, #163B68 0%, var(--navy) 52%); color:#fff; border-radius:var(--r-l); box-shadow:var(--sh-l); overflow:hidden; }
+.tk::before{ content:""; position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 10px, transparent 10px 20px); }
+.tk > *{ position:relative; }
+.tk-top{ display:flex; align-items:center; gap:10px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,.14); }
+.tk-logo{ width:30px; height:30px; flex:none; }
+.tk-logo svg{ display:block; width:100%; height:100%; fill:#fff; } .tk-logo svg .w{ fill:var(--amber); }
+.tk-brand{ font:700 15px/1 var(--ui); }
+.tk-class{ margin-left:auto; padding:6px 11px; border-radius:999px; background:var(--amber); color:var(--navy); font:800 11px/1 var(--ui); letter-spacing:.08em; text-transform:uppercase; }
+
+.tk-route{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; padding:20px 0; }
+.tk-lab{ display:block; font:700 10.5px/1 var(--ui); font-style:normal; letter-spacing:.14em; color:var(--amber); margin-bottom:7px; }
+.tk-val{ display:block; font:700 15px/1.3 var(--ui); color:#fff; }
+.tk-r{ text-align:right; }
+.tk-mid{ display:flex; align-items:center; gap:5px; color:rgba(255,255,255,.4); }
+.tk-mid i{ width:16px; height:2px; border-radius:2px; background:currentColor; }
+.tk-mid svg{ width:20px; height:20px; fill:none; stroke:var(--amber); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+
+.tk-rows{ display:flex; flex-direction:column; gap:12px; padding:18px 0 20px; border-top:1px solid rgba(255,255,255,.14); }
+.tk-rows > div{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
+.tk-rows dt{ font:500 14.5px/1 var(--ui); color:rgba(255,255,255,.62); }
+.tk-rows dd{ margin:0; font:700 15.5px/1 var(--ui); }
+.tk-rows dd .muted{ color:rgba(255,255,255,.55); font-weight:500; margin-left:3px; }
+
+.tk-rip{ position:relative; height:26px; margin:0 calc(clamp(20px,2.6vw,28px) * -1); }
+.tk-rip::before,.tk-rip::after{ content:""; position:absolute; top:50%; width:26px; height:26px; margin-top:-13px; background:var(--bg); border-radius:50%; }
+.tk-rip::before{ left:-13px; } .tk-rip::after{ right:-13px; }
+.tk-rip span{ position:absolute; left:18px; right:18px; top:50%; height:2px; margin-top:-1px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.34) 0 7px, transparent 7px 14px); }
+
+.tk-total{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:6px 0 20px; }
+.tk-total > span{ font:600 15px/1 var(--ui); color:rgba(255,255,255,.72); }
+.total{ font:800 clamp(2rem,4.4vw,2.5rem)/1 var(--ui); letter-spacing:-.03em; color:var(--amber); }
+.tk-note{ margin-top:14px; font-size:12.5px; line-height:1.55; color:rgba(255,255,255,.5); }
+.swapbox > b{ display:none; font-weight:inherit; }
+
+.fares-sec{ padding:clamp(40px,6vw,84px) 0; background:#fff; border-block:1px solid var(--line); }
+.cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(14px,2vw,22px); }
+.card{ position:relative; padding:clamp(24px,3vw,34px); border:1.5px solid var(--line); border-radius:var(--r-l); background:var(--bg); overflow:hidden; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.card:hover{ transform:translateY(-4px); box-shadow:var(--sh-l); border-color:var(--line-2); }
+.card-lead{ background:var(--navy); border-color:var(--navy); color:#fff; }
+.tag{ display:inline-block; padding:6px 13px; border-radius:999px; background:#fff; border:1px solid var(--line); font:700 12px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+.tag-lead{ background:var(--amber); border-color:var(--amber); color:var(--navy); }
+.big{ margin:18px 0 20px; font:800 3.3rem/1 var(--ui); letter-spacing:-.04em; color:var(--navy); }
+.card-lead .big{ color:#fff; }
+.big i{ font-style:normal; font-size:1.5rem; vertical-align:.72em; margin-right:2px; }
+.big small{ font:600 1rem/1 var(--ui); letter-spacing:0; color:var(--muted); margin-left:4px; }
+.card-lead .big small{ color:rgba(255,255,255,.6); }
+.ticks{ display:flex; flex-direction:column; gap:11px; }
+.ticks li{ position:relative; padding-left:28px; font-size:15px; color:var(--muted); }
+.card-lead .ticks li{ color:rgba(255,255,255,.78); }
+.ticks li::before{ content:""; position:absolute; left:0; top:.36em; width:17px; height:17px; border-radius:50%; background:var(--ok) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E") center/11px no-repeat; }
+.ribbon{ position:absolute; right:-52px; top:26px; width:180px; padding:7px 0; transform:rotate(45deg); background:var(--amber); color:var(--navy); text-align:center; font:800 10.5px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; box-shadow:0 4px 12px rgba(10,34,64,.2); }
+
+.camp-sec{ padding:clamp(40px,6vw,84px) 0; }
+.colleges{ display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:clamp(14px,2vw,22px); align-items:start; }
+.college{ padding:clamp(22px,2.6vw,28px); background:var(--card); border:1px solid var(--line); border-radius:var(--r-l); box-shadow:var(--sh); }
+.college h3{ padding-bottom:14px; margin-bottom:14px; border-bottom:2px solid var(--amber); font-size:1.08rem; font-weight:800; color:var(--navy); }
+.college ul{ display:flex; flex-direction:column; gap:12px; }
+.college li{ position:relative; padding-left:24px; }
+.college li::before{ content:""; position:absolute; left:4px; top:.52em; width:9px; height:9px; border-radius:50%; background:#fff; box-shadow:0 0 0 2.5px var(--blue); }
+.college li::after{ content:""; position:absolute; left:8px; top:calc(.52em + 11px); bottom:-14px; width:2px; background:var(--line); }
+.college li:last-child::after{ display:none; }
+.college b{ display:block; font-weight:700; font-size:15px; }
+.college span{ display:block; font-size:13.5px; color:var(--muted); }
+
+.how{ padding:clamp(40px,6vw,84px) 0 clamp(56px,8vw,110px); background:#fff; border-top:1px solid var(--line); }
+.steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(18px,3vw,34px); }
+.steps li{ position:relative; padding-top:14px; }
+.num{ display:grid; place-items:center; width:48px; height:48px; margin-bottom:18px; border-radius:16px; background:var(--amber); color:var(--navy); font:800 20px/1 var(--ui); box-shadow:0 8px 18px rgba(233,164,0,.3); }
+.steps h3{ font-size:1.22rem; font-weight:800; margin-bottom:9px; }
+.steps p{ color:var(--muted); font-size:15.5px; }
+
+.foot{ padding:clamp(34px,5vw,56px) 0; background:var(--navy); color:rgba(255,255,255,.7); }
+.foot-in{ display:grid; grid-template-columns:1fr auto; gap:22px 40px; align-items:start; }
+.foot-brand{ display:flex; gap:13px; align-items:flex-start; }
+.foot-brand .brand-mark{ width:36px; height:36px; } .foot-brand .brand-mark svg{ fill:#fff; }
+.foot-brand p{ font-size:14.5px; line-height:1.55; }
+.foot-brand b{ color:#fff; font-size:16px; font-weight:800; }
+.foot-links{ display:flex; flex-wrap:wrap; gap:8px 24px; font-weight:600; font-size:14.5px; }
+.foot-links a:hover{ color:#fff; }
+.foot-note{ grid-column:1/-1; padding-top:22px; border-top:1px solid rgba(255,255,255,.14); font-size:13px; color:rgba(255,255,255,.45); }
+
+@media (max-width:1040px){
+  .booking-grid{ grid-template-columns:1fr; } .ticket{ position:static; }
+  .hero-in{ grid-template-columns:1fr; } .hero-art{ order:-1; } .road{ max-width:420px; }
+}
+@media (max-width:860px){
+  .nav-links{ display:none; } .cards,.steps{ grid-template-columns:1fr; }
+  .qpad{ grid-template-columns:repeat(7,1fr); } .tpad{ grid-template-columns:repeat(4,1fr); }
+}
+@media (max-width:560px){
+  html{ scroll-padding-top:76px; } .wrap{ width:calc(100% - 32px); }
+  .row{ grid-template-columns:1fr; }
+  .swap{ width:100%; height:30px; transform:rotate(90deg); }
+  .fares{ grid-template-columns:1fr; }
+  .fare{ flex-direction:row; justify-content:space-between; align-items:center; padding:14px 18px; }
+  .fare-unit{ display:none; }
+  .qpad{ grid-template-columns:repeat(5,1fr); } .tpad{ grid-template-columns:repeat(3,1fr); }
+  .camps{ max-height:180px; }
+  .foot-in{ grid-template-columns:1fr; }
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.001s !important; transition-duration:.001s !important; }
+  html{ scroll-behavior:auto; }
+}
+
+
+/* From and To can be the same campus; CSS cannot stop that, but it can say so */
+.same{ display:none; margin-top:10px; padding:10px 14px; border-radius:var(--r); background:#FFF4E5; border:1.5px solid #FFD79A; color:#8A5A00; font:600 13.5px/1.4 var(--ui); }
+.tk.has-same .btn-wide{ opacity:.5; }
+.tk-warn{ display:none; margin:0 0 14px; padding:9px 13px; border-radius:12px; background:rgba(255,194,51,.16); border:1px solid rgba(255,194,51,.4); color:var(--amber); font:600 13px/1.4 var(--ui); }
+
+/* ── Checkout: a dialog driven by three radios (closed / form / paid) ──
+   Purchase ticket checks co-form, OK checks co-paid, Done checks
+   co-closed. The trip details reuse the same mirror classes as the
+   boarding pass, so they follow the form without a line of script. */
+.co{ display:none; position:fixed; inset:0; z-index:200; padding:24px; overflow-y:auto; }
+#co-form:checked ~ .booking-grid .co,
+#co-paid:checked ~ .booking-grid .co{ display:flex; align-items:center; justify-content:center; }
+.co-scrim{ position:fixed; inset:0; background:rgba(8,20,38,.62); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); cursor:pointer; }
+.co-box{
+  position:relative; width:min(100%, 1020px); margin:auto;
+  background:var(--card); border-radius:var(--r-l); box-shadow:0 40px 120px rgba(8,20,38,.45);
+  padding:clamp(22px,3vw,36px); animation:coIn .26s cubic-bezier(.2,1,.3,1) both;
+}
+@keyframes coIn{ from{ opacity:0; transform:translateY(18px) scale(.97); } }
+.co-x{
+  position:absolute; right:14px; top:14px; width:36px; height:36px; display:grid; place-items:center;
+  border-radius:50%; background:var(--bg); color:var(--muted); font:400 24px/1 var(--ui); cursor:pointer;
+}
+.co-x:hover{ background:var(--line); color:var(--ink); }
+
+.co-pay{ display:grid; grid-template-columns:1.15fr .72fr 1fr; gap:clamp(18px,2.4vw,30px); align-items:start; }
+.co-col h3{ margin-bottom:16px; font:800 13px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+.co-h2{ margin-top:22px !important; }
+.co-f{ display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.co-f label{ font:600 12.5px/1 var(--ui); color:var(--muted); }
+.co-f input{
+  height:46px; padding:0 13px; border:1.5px solid var(--line-2); border-radius:12px; background:#fff;
+  font:500 15px/1 var(--ui); color:var(--ink); transition:border-color .16s ease, box-shadow .16s ease;
+}
+.co-f input:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 4px rgba(30,111,217,.14); }
+.co-two{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+.co-mid{ display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:30px; text-align:center; }
+.co-amount{ font:800 clamp(1.9rem,3.4vw,2.5rem)/1 var(--ui); letter-spacing:-.03em; color:var(--navy); }
+.co-ok{
+  display:grid; place-items:center; width:132px; height:132px; border-radius:50%;
+  background:var(--amber); color:var(--navy); cursor:pointer; text-align:center;
+  font:800 1.3rem/1.15 var(--ui); letter-spacing:-.01em;
+  box-shadow:0 12px 30px rgba(233,164,0,.42);
+  transition:transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.co-ok:hover{ background:var(--amber-d); transform:translateY(-3px); box-shadow:0 18px 40px rgba(233,164,0,.5); }
+.co-ok:active{ transform:translateY(0); }
+
+.co-trip{ padding:clamp(18px,2vw,24px); background:var(--bg); border-radius:var(--r); }
+.co-rows{ display:flex; flex-direction:column; gap:13px; }
+.co-rows > div{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
+.co-rows dt{ font:500 14px/1 var(--ui); color:var(--muted); }
+.co-rows dd{ margin:0; font:700 14.5px/1.3 var(--ui); text-align:right; }
+
+/* paid state */
+.co-done{ display:none; text-align:center; }
+#co-paid:checked ~ .booking-grid .co-pay{ display:none; }
+#co-paid:checked ~ .booking-grid .co-done{ display:block; }
+#co-paid:checked ~ .booking-grid .co-box{ width:min(100%, 440px); }
+.co-tick{
+  display:grid; place-items:center; width:62px; height:62px; margin:4px auto 16px; border-radius:50%;
+  background:var(--ok); box-shadow:0 10px 26px rgba(14,159,110,.4);
+  animation:coPop .4s cubic-bezier(.2,1.5,.4,1) .06s both;
+}
+@keyframes coPop{ from{ transform:scale(.3); opacity:0; } }
+.co-tick svg{ width:30px; height:30px; fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.co-paid-h{ font:800 2rem/1 var(--ui); letter-spacing:-.03em; color:var(--navy); }
+.co-paid-s{ margin-top:7px; font-size:14px; color:var(--muted); }
+.co-qr{ width:190px; margin:20px auto 10px; padding:12px; background:#fff; border:1.5px solid var(--line); border-radius:16px; box-shadow:var(--sh); }
+.qr{ display:block; width:100%; height:auto; }
+.co-ref{ font:600 13px/1 var(--mono, ui-monospace, Menlo, monospace); letter-spacing:.14em; color:var(--muted); }
+.co-rows-done{ margin:20px 0 22px; padding:18px 0 0; border-top:1px solid var(--line); text-align:left; }
+.co-paid-total{ padding-top:13px; border-top:1px solid var(--line); }
+.co-paid-total dt{ font-weight:700 !important; color:var(--ink) !important; }
+.co-paid-total dd{ font-size:1.25rem !important; color:var(--navy); }
+.co-close{ background:var(--navy); color:#fff; box-shadow:0 6px 16px rgba(10,34,64,.22); }
+.co-close:hover{ background:var(--navy-2); }
+
+@media (max-width:900px){
+  .co{ padding:14px; align-items:flex-start !important; }
+  .co-pay{ grid-template-columns:1fr; }
+  .co-mid{ order:3; padding-top:4px; }
+  .co-trip{ order:2; }
+  .co-ok{ width:100%; height:62px; border-radius:999px; font-size:1.15rem; }
+}
+
+/* ngày tháng năm: ba dropdown hẹp, vì CSS không đọc được <input type="date"> */
+.dates{ display:grid; grid-template-columns:.8fr 1fr .9fr; gap:10px; margin-bottom:18px; }
+.dd-narrow .dd-panel{ max-height:240px; }
+.dd-day .dd-panel{ columns:3; column-gap:4px; }
+.dsep{ margin:0 2px; opacity:.45; }
+.tk-rows dd .swapbox + .swapbox{ margin-left:4px; }
+
+/* Không cho chọn cùng một campus cho cả hai đầu: campus đang chọn ở ô này
+   bị khoá trong danh sách ô kia. Dòng cảnh báo vẫn giữ, vì bàn phím có thể
+   đi thẳng vào radio mà không qua nhãn. */
+.camp.off{ opacity:.32; pointer-events:none; }
+.camp.off b::after{ content:" — selected as departure"; font-weight:500; font-size:12px; color:var(--muted); }
+
+/* ── Contact ─────────────────────────────────────────────────────── */
+.contact{ padding:clamp(40px,6vw,84px) 0 clamp(52px,7vw,96px); background:var(--bg); border-top:1px solid var(--line); }
+.ct-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(14px,2vw,22px); }
+.ct{
+  display:flex; flex-direction:column; gap:7px;
+  padding:clamp(22px,2.6vw,30px); background:var(--card);
+  border:1px solid var(--line); border-radius:var(--r-l); box-shadow:var(--sh);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.ct:hover{ transform:translateY(-4px); box-shadow:var(--sh-l); border-color:var(--line-2); }
+.ct-ico{ display:grid; place-items:center; width:46px; height:46px; margin-bottom:9px; border-radius:14px; background:var(--navy); }
+.ct-ico svg{ width:23px; height:23px; fill:none; stroke:var(--amber); stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.ct-k{ font:700 12px/1 var(--ui); letter-spacing:.11em; text-transform:uppercase; color:var(--muted); }
+.ct-v{ font:600 17px/1.45 var(--ui); color:var(--ink); }
+@media (max-width:860px){ .ct-grid{ grid-template-columns:1fr; } }
+
+/* ==========================================================================
+   Generated state rules — what makes the ticket mirror the form
+   ========================================================================== */
+/* chosen campus, departure hour, ticket type, seat count */
+#f0:checked ~ .booking-grid .camp[for="f0"],
+#f1:checked ~ .booking-grid .camp[for="f1"],
+#f2:checked ~ .booking-grid .camp[for="f2"],
+#f3:checked ~ .booking-grid .camp[for="f3"],
+#f4:checked ~ .booking-grid .camp[for="f4"],
+#f5:checked ~ .booking-grid .camp[for="f5"],
+#f6:checked ~ .booking-grid .camp[for="f6"],
+#f7:checked ~ .booking-grid .camp[for="f7"],
+#f8:checked ~ .booking-grid .camp[for="f8"],
+#f9:checked ~ .booking-grid .camp[for="f9"],
+#f10:checked ~ .booking-grid .camp[for="f10"],
+#f11:checked ~ .booking-grid .camp[for="f11"],
+#f12:checked ~ .booking-grid .camp[for="f12"],
+#f13:checked ~ .booking-grid .camp[for="f13"],
+#f14:checked ~ .booking-grid .camp[for="f14"],
+#f15:checked ~ .booking-grid .camp[for="f15"],
+#f16:checked ~ .booking-grid .camp[for="f16"],
+#f17:checked ~ .booking-grid .camp[for="f17"],
+#f18:checked ~ .booking-grid .camp[for="f18"],
+#f19:checked ~ .booking-grid .camp[for="f19"],
+#t0:checked ~ .booking-grid .camp[for="t0"],
+#t1:checked ~ .booking-grid .camp[for="t1"],
+#t2:checked ~ .booking-grid .camp[for="t2"],
+#t3:checked ~ .booking-grid .camp[for="t3"],
+#t4:checked ~ .booking-grid .camp[for="t4"],
+#t5:checked ~ .booking-grid .camp[for="t5"],
+#t6:checked ~ .booking-grid .camp[for="t6"],
+#t7:checked ~ .booking-grid .camp[for="t7"],
+#t8:checked ~ .booking-grid .camp[for="t8"],
+#t9:checked ~ .booking-grid .camp[for="t9"],
+#t10:checked ~ .booking-grid .camp[for="t10"],
+#t11:checked ~ .booking-grid .camp[for="t11"],
+#t12:checked ~ .booking-grid .camp[for="t12"],
+#t13:checked ~ .booking-grid .camp[for="t13"],
+#t14:checked ~ .booking-grid .camp[for="t14"],
+#t15:checked ~ .booking-grid .camp[for="t15"],
+#t16:checked ~ .booking-grid .camp[for="t16"],
+#t17:checked ~ .booking-grid .camp[for="t17"],
+#t18:checked ~ .booking-grid .camp[for="t18"],
+#t19:checked ~ .booking-grid .camp[for="t19"]{ background:var(--navy); color:#fff; }
+#f0:checked ~ .booking-grid .camp[for="f0"] i,
+#f1:checked ~ .booking-grid .camp[for="f1"] i,
+#f2:checked ~ .booking-grid .camp[for="f2"] i,
+#f3:checked ~ .booking-grid .camp[for="f3"] i,
+#f4:checked ~ .booking-grid .camp[for="f4"] i,
+#f5:checked ~ .booking-grid .camp[for="f5"] i,
+#f6:checked ~ .booking-grid .camp[for="f6"] i,
+#f7:checked ~ .booking-grid .camp[for="f7"] i,
+#f8:checked ~ .booking-grid .camp[for="f8"] i,
+#f9:checked ~ .booking-grid .camp[for="f9"] i,
+#f10:checked ~ .booking-grid .camp[for="f10"] i,
+#f11:checked ~ .booking-grid .camp[for="f11"] i,
+#f12:checked ~ .booking-grid .camp[for="f12"] i,
+#f13:checked ~ .booking-grid .camp[for="f13"] i,
+#f14:checked ~ .booking-grid .camp[for="f14"] i,
+#f15:checked ~ .booking-grid .camp[for="f15"] i,
+#f16:checked ~ .booking-grid .camp[for="f16"] i,
+#f17:checked ~ .booking-grid .camp[for="f17"] i,
+#f18:checked ~ .booking-grid .camp[for="f18"] i,
+#f19:checked ~ .booking-grid .camp[for="f19"] i,
+#t0:checked ~ .booking-grid .camp[for="t0"] i,
+#t1:checked ~ .booking-grid .camp[for="t1"] i,
+#t2:checked ~ .booking-grid .camp[for="t2"] i,
+#t3:checked ~ .booking-grid .camp[for="t3"] i,
+#t4:checked ~ .booking-grid .camp[for="t4"] i,
+#t5:checked ~ .booking-grid .camp[for="t5"] i,
+#t6:checked ~ .booking-grid .camp[for="t6"] i,
+#t7:checked ~ .booking-grid .camp[for="t7"] i,
+#t8:checked ~ .booking-grid .camp[for="t8"] i,
+#t9:checked ~ .booking-grid .camp[for="t9"] i,
+#t10:checked ~ .booking-grid .camp[for="t10"] i,
+#t11:checked ~ .booking-grid .camp[for="t11"] i,
+#t12:checked ~ .booking-grid .camp[for="t12"] i,
+#t13:checked ~ .booking-grid .camp[for="t13"] i,
+#t14:checked ~ .booking-grid .camp[for="t14"] i,
+#t15:checked ~ .booking-grid .camp[for="t15"] i,
+#t16:checked ~ .booking-grid .camp[for="t16"] i,
+#t17:checked ~ .booking-grid .camp[for="t17"] i,
+#t18:checked ~ .booking-grid .camp[for="t18"] i,
+#t19:checked ~ .booking-grid .camp[for="t19"] i{ color:var(--amber); }
+#h0:checked ~ .booking-grid .tbtn[for="h0"],
+#h1:checked ~ .booking-grid .tbtn[for="h1"],
+#h2:checked ~ .booking-grid .tbtn[for="h2"],
+#h3:checked ~ .booking-grid .tbtn[for="h3"],
+#h4:checked ~ .booking-grid .tbtn[for="h4"],
+#h5:checked ~ .booking-grid .tbtn[for="h5"],
+#h6:checked ~ .booking-grid .tbtn[for="h6"],
+#h7:checked ~ .booking-grid .tbtn[for="h7"],
+#h8:checked ~ .booking-grid .tbtn[for="h8"],
+#h9:checked ~ .booking-grid .tbtn[for="h9"],
+#h10:checked ~ .booking-grid .tbtn[for="h10"],
+#h11:checked ~ .booking-grid .tbtn[for="h11"],
+#h12:checked ~ .booking-grid .tbtn[for="h12"],
+#h13:checked ~ .booking-grid .tbtn[for="h13"],
+#h14:checked ~ .booking-grid .tbtn[for="h14"],
+#h15:checked ~ .booking-grid .tbtn[for="h15"],
+#h16:checked ~ .booking-grid .tbtn[for="h16"]{ border-color:var(--navy); background:var(--navy); color:#fff; }
+#tt-staff:checked ~ .booking-grid .fare[for="tt-staff"],
+#tt-student:checked ~ .booking-grid .fare[for="tt-student"],
+#tt-other:checked ~ .booking-grid .fare[for="tt-other"]{ border-color:var(--navy); background:var(--navy); box-shadow:0 10px 24px rgba(10,34,64,.26); transform:translateY(-2px); }
+#tt-staff:checked ~ .booking-grid .fare[for="tt-staff"] .fare-price,
+#tt-student:checked ~ .booking-grid .fare[for="tt-student"] .fare-price,
+#tt-other:checked ~ .booking-grid .fare[for="tt-other"] .fare-price{ color:#fff; }
+#tt-staff:checked ~ .booking-grid .fare[for="tt-staff"] .fare-name,
+#tt-student:checked ~ .booking-grid .fare[for="tt-student"] .fare-name,
+#tt-other:checked ~ .booking-grid .fare[for="tt-other"] .fare-name{ color:var(--amber); }
+#tt-staff:checked ~ .booking-grid .fare[for="tt-staff"] .fare-unit,
+#tt-student:checked ~ .booking-grid .fare[for="tt-student"] .fare-unit,
+#tt-other:checked ~ .booking-grid .fare[for="tt-other"] .fare-unit{ color:rgba(255,255,255,.55); }
+#q-1:checked ~ .booking-grid .qbtn[for="q-1"],
+#q-2:checked ~ .booking-grid .qbtn[for="q-2"],
+#q-3:checked ~ .booking-grid .qbtn[for="q-3"],
+#q-4:checked ~ .booking-grid .qbtn[for="q-4"],
+#q-5:checked ~ .booking-grid .qbtn[for="q-5"],
+#q-6:checked ~ .booking-grid .qbtn[for="q-6"],
+#q-7:checked ~ .booking-grid .qbtn[for="q-7"],
+#q-8:checked ~ .booking-grid .qbtn[for="q-8"],
+#q-9:checked ~ .booking-grid .qbtn[for="q-9"],
+#q-10:checked ~ .booking-grid .qbtn[for="q-10"],
+#q-11:checked ~ .booking-grid .qbtn[for="q-11"],
+#q-12:checked ~ .booking-grid .qbtn[for="q-12"],
+#q-13:checked ~ .booking-grid .qbtn[for="q-13"],
+#q-14:checked ~ .booking-grid .qbtn[for="q-14"],
+#q-15:checked ~ .booking-grid .qbtn[for="q-15"],
+#q-16:checked ~ .booking-grid .qbtn[for="q-16"],
+#q-17:checked ~ .booking-grid .qbtn[for="q-17"],
+#q-18:checked ~ .booking-grid .qbtn[for="q-18"],
+#q-19:checked ~ .booking-grid .qbtn[for="q-19"],
+#q-20:checked ~ .booking-grid .qbtn[for="q-20"],
+#q-21:checked ~ .booking-grid .qbtn[for="q-21"],
+#q-22:checked ~ .booking-grid .qbtn[for="q-22"],
+#q-23:checked ~ .booking-grid .qbtn[for="q-23"],
+#q-24:checked ~ .booking-grid .qbtn[for="q-24"],
+#q-25:checked ~ .booking-grid .qbtn[for="q-25"]{ border-color:var(--navy); background:var(--navy); color:#fff; transform:translateY(-1px); }
+
+/* keyboard focus lands on the label, not the hidden radio */
+#f0:focus-visible ~ .booking-grid .camp[for="f0"],
+#f1:focus-visible ~ .booking-grid .camp[for="f1"],
+#f2:focus-visible ~ .booking-grid .camp[for="f2"],
+#f3:focus-visible ~ .booking-grid .camp[for="f3"],
+#f4:focus-visible ~ .booking-grid .camp[for="f4"],
+#f5:focus-visible ~ .booking-grid .camp[for="f5"],
+#f6:focus-visible ~ .booking-grid .camp[for="f6"],
+#f7:focus-visible ~ .booking-grid .camp[for="f7"],
+#f8:focus-visible ~ .booking-grid .camp[for="f8"],
+#f9:focus-visible ~ .booking-grid .camp[for="f9"],
+#f10:focus-visible ~ .booking-grid .camp[for="f10"],
+#f11:focus-visible ~ .booking-grid .camp[for="f11"],
+#f12:focus-visible ~ .booking-grid .camp[for="f12"],
+#f13:focus-visible ~ .booking-grid .camp[for="f13"],
+#f14:focus-visible ~ .booking-grid .camp[for="f14"],
+#f15:focus-visible ~ .booking-grid .camp[for="f15"],
+#f16:focus-visible ~ .booking-grid .camp[for="f16"],
+#f17:focus-visible ~ .booking-grid .camp[for="f17"],
+#f18:focus-visible ~ .booking-grid .camp[for="f18"],
+#f19:focus-visible ~ .booking-grid .camp[for="f19"],
+#t0:focus-visible ~ .booking-grid .camp[for="t0"],
+#t1:focus-visible ~ .booking-grid .camp[for="t1"],
+#t2:focus-visible ~ .booking-grid .camp[for="t2"],
+#t3:focus-visible ~ .booking-grid .camp[for="t3"],
+#t4:focus-visible ~ .booking-grid .camp[for="t4"],
+#t5:focus-visible ~ .booking-grid .camp[for="t5"],
+#t6:focus-visible ~ .booking-grid .camp[for="t6"],
+#t7:focus-visible ~ .booking-grid .camp[for="t7"],
+#t8:focus-visible ~ .booking-grid .camp[for="t8"],
+#t9:focus-visible ~ .booking-grid .camp[for="t9"],
+#t10:focus-visible ~ .booking-grid .camp[for="t10"],
+#t11:focus-visible ~ .booking-grid .camp[for="t11"],
+#t12:focus-visible ~ .booking-grid .camp[for="t12"],
+#t13:focus-visible ~ .booking-grid .camp[for="t13"],
+#t14:focus-visible ~ .booking-grid .camp[for="t14"],
+#t15:focus-visible ~ .booking-grid .camp[for="t15"],
+#t16:focus-visible ~ .booking-grid .camp[for="t16"],
+#t17:focus-visible ~ .booking-grid .camp[for="t17"],
+#t18:focus-visible ~ .booking-grid .camp[for="t18"],
+#t19:focus-visible ~ .booking-grid .camp[for="t19"],
+#h0:focus-visible ~ .booking-grid .tbtn[for="h0"],
+#h1:focus-visible ~ .booking-grid .tbtn[for="h1"],
+#h2:focus-visible ~ .booking-grid .tbtn[for="h2"],
+#h3:focus-visible ~ .booking-grid .tbtn[for="h3"],
+#h4:focus-visible ~ .booking-grid .tbtn[for="h4"],
+#h5:focus-visible ~ .booking-grid .tbtn[for="h5"],
+#h6:focus-visible ~ .booking-grid .tbtn[for="h6"],
+#h7:focus-visible ~ .booking-grid .tbtn[for="h7"],
+#h8:focus-visible ~ .booking-grid .tbtn[for="h8"],
+#h9:focus-visible ~ .booking-grid .tbtn[for="h9"],
+#h10:focus-visible ~ .booking-grid .tbtn[for="h10"],
+#h11:focus-visible ~ .booking-grid .tbtn[for="h11"],
+#h12:focus-visible ~ .booking-grid .tbtn[for="h12"],
+#h13:focus-visible ~ .booking-grid .tbtn[for="h13"],
+#h14:focus-visible ~ .booking-grid .tbtn[for="h14"],
+#h15:focus-visible ~ .booking-grid .tbtn[for="h15"],
+#h16:focus-visible ~ .booking-grid .tbtn[for="h16"],
+#tt-staff:focus-visible ~ .booking-grid .fare[for="tt-staff"],
+#tt-student:focus-visible ~ .booking-grid .fare[for="tt-student"],
+#tt-other:focus-visible ~ .booking-grid .fare[for="tt-other"],
+#q-1:focus-visible ~ .booking-grid .qbtn[for="q-1"],
+#q-2:focus-visible ~ .booking-grid .qbtn[for="q-2"],
+#q-3:focus-visible ~ .booking-grid .qbtn[for="q-3"],
+#q-4:focus-visible ~ .booking-grid .qbtn[for="q-4"],
+#q-5:focus-visible ~ .booking-grid .qbtn[for="q-5"],
+#q-6:focus-visible ~ .booking-grid .qbtn[for="q-6"],
+#q-7:focus-visible ~ .booking-grid .qbtn[for="q-7"],
+#q-8:focus-visible ~ .booking-grid .qbtn[for="q-8"],
+#q-9:focus-visible ~ .booking-grid .qbtn[for="q-9"],
+#q-10:focus-visible ~ .booking-grid .qbtn[for="q-10"],
+#q-11:focus-visible ~ .booking-grid .qbtn[for="q-11"],
+#q-12:focus-visible ~ .booking-grid .qbtn[for="q-12"],
+#q-13:focus-visible ~ .booking-grid .qbtn[for="q-13"],
+#q-14:focus-visible ~ .booking-grid .qbtn[for="q-14"],
+#q-15:focus-visible ~ .booking-grid .qbtn[for="q-15"],
+#q-16:focus-visible ~ .booking-grid .qbtn[for="q-16"],
+#q-17:focus-visible ~ .booking-grid .qbtn[for="q-17"],
+#q-18:focus-visible ~ .booking-grid .qbtn[for="q-18"],
+#q-19:focus-visible ~ .booking-grid .qbtn[for="q-19"],
+#q-20:focus-visible ~ .booking-grid .qbtn[for="q-20"],
+#q-21:focus-visible ~ .booking-grid .qbtn[for="q-21"],
+#q-22:focus-visible ~ .booking-grid .qbtn[for="q-22"],
+#q-23:focus-visible ~ .booking-grid .qbtn[for="q-23"],
+#q-24:focus-visible ~ .booking-grid .qbtn[for="q-24"],
+#q-25:focus-visible ~ .booking-grid .qbtn[for="q-25"]{ outline:3px solid var(--blue); outline-offset:3px; }
+
+/* the ticket mirrors the route and the hour */
+#f0:checked ~ .booking-grid .fl0,
+#f1:checked ~ .booking-grid .fl1,
+#f2:checked ~ .booking-grid .fl2,
+#f3:checked ~ .booking-grid .fl3,
+#f4:checked ~ .booking-grid .fl4,
+#f5:checked ~ .booking-grid .fl5,
+#f6:checked ~ .booking-grid .fl6,
+#f7:checked ~ .booking-grid .fl7,
+#f8:checked ~ .booking-grid .fl8,
+#f9:checked ~ .booking-grid .fl9,
+#f10:checked ~ .booking-grid .fl10,
+#f11:checked ~ .booking-grid .fl11,
+#f12:checked ~ .booking-grid .fl12,
+#f13:checked ~ .booking-grid .fl13,
+#f14:checked ~ .booking-grid .fl14,
+#f15:checked ~ .booking-grid .fl15,
+#f16:checked ~ .booking-grid .fl16,
+#f17:checked ~ .booking-grid .fl17,
+#f18:checked ~ .booking-grid .fl18,
+#f19:checked ~ .booking-grid .fl19,
+#t0:checked ~ .booking-grid .tl0,
+#t1:checked ~ .booking-grid .tl1,
+#t2:checked ~ .booking-grid .tl2,
+#t3:checked ~ .booking-grid .tl3,
+#t4:checked ~ .booking-grid .tl4,
+#t5:checked ~ .booking-grid .tl5,
+#t6:checked ~ .booking-grid .tl6,
+#t7:checked ~ .booking-grid .tl7,
+#t8:checked ~ .booking-grid .tl8,
+#t9:checked ~ .booking-grid .tl9,
+#t10:checked ~ .booking-grid .tl10,
+#t11:checked ~ .booking-grid .tl11,
+#t12:checked ~ .booking-grid .tl12,
+#t13:checked ~ .booking-grid .tl13,
+#t14:checked ~ .booking-grid .tl14,
+#t15:checked ~ .booking-grid .tl15,
+#t16:checked ~ .booking-grid .tl16,
+#t17:checked ~ .booking-grid .tl17,
+#t18:checked ~ .booking-grid .tl18,
+#t19:checked ~ .booking-grid .tl19{ display:block; }
+#h0:checked ~ .booking-grid .tm0,
+#h1:checked ~ .booking-grid .tm1,
+#h2:checked ~ .booking-grid .tm2,
+#h3:checked ~ .booking-grid .tm3,
+#h4:checked ~ .booking-grid .tm4,
+#h5:checked ~ .booking-grid .tm5,
+#h6:checked ~ .booking-grid .tm6,
+#h7:checked ~ .booking-grid .tm7,
+#h8:checked ~ .booking-grid .tm8,
+#h9:checked ~ .booking-grid .tm9,
+#h10:checked ~ .booking-grid .tm10,
+#h11:checked ~ .booking-grid .tm11,
+#h12:checked ~ .booking-grid .tm12,
+#h13:checked ~ .booking-grid .tm13,
+#h14:checked ~ .booking-grid .tm14,
+#h15:checked ~ .booking-grid .tm15,
+#h16:checked ~ .booking-grid .tm16{ display:inline; }
+
+/* ticket type name, unit price, seat count */
+#tt-staff:checked ~ .booking-grid .n-staff,
+#tt-student:checked ~ .booking-grid .n-student,
+#tt-other:checked ~ .booking-grid .n-other,
+#tt-staff:checked ~ .booking-grid .e-staff,
+#tt-student:checked ~ .booking-grid .e-student,
+#tt-other:checked ~ .booking-grid .e-other,
+#q-1:checked ~ .booking-grid .c-1,
+#q-2:checked ~ .booking-grid .c-2,
+#q-3:checked ~ .booking-grid .c-3,
+#q-4:checked ~ .booking-grid .c-4,
+#q-5:checked ~ .booking-grid .c-5,
+#q-6:checked ~ .booking-grid .c-6,
+#q-7:checked ~ .booking-grid .c-7,
+#q-8:checked ~ .booking-grid .c-8,
+#q-9:checked ~ .booking-grid .c-9,
+#q-10:checked ~ .booking-grid .c-10,
+#q-11:checked ~ .booking-grid .c-11,
+#q-12:checked ~ .booking-grid .c-12,
+#q-13:checked ~ .booking-grid .c-13,
+#q-14:checked ~ .booking-grid .c-14,
+#q-15:checked ~ .booking-grid .c-15,
+#q-16:checked ~ .booking-grid .c-16,
+#q-17:checked ~ .booking-grid .c-17,
+#q-18:checked ~ .booking-grid .c-18,
+#q-19:checked ~ .booking-grid .c-19,
+#q-20:checked ~ .booking-grid .c-20,
+#q-21:checked ~ .booking-grid .c-21,
+#q-22:checked ~ .booking-grid .c-22,
+#q-23:checked ~ .booking-grid .c-23,
+#q-24:checked ~ .booking-grid .c-24,
+#q-25:checked ~ .booking-grid .c-25{ display:inline; }
+
+/* the 75 totals: ticket type x seat count */
+/* staff, $3 a seat */
+#tt-staff:checked ~ #q-1:checked ~ .booking-grid .v-staff-1,
+#tt-staff:checked ~ #q-2:checked ~ .booking-grid .v-staff-2,
+#tt-staff:checked ~ #q-3:checked ~ .booking-grid .v-staff-3,
+#tt-staff:checked ~ #q-4:checked ~ .booking-grid .v-staff-4,
+#tt-staff:checked ~ #q-5:checked ~ .booking-grid .v-staff-5,
+#tt-staff:checked ~ #q-6:checked ~ .booking-grid .v-staff-6,
+#tt-staff:checked ~ #q-7:checked ~ .booking-grid .v-staff-7,
+#tt-staff:checked ~ #q-8:checked ~ .booking-grid .v-staff-8,
+#tt-staff:checked ~ #q-9:checked ~ .booking-grid .v-staff-9,
+#tt-staff:checked ~ #q-10:checked ~ .booking-grid .v-staff-10,
+#tt-staff:checked ~ #q-11:checked ~ .booking-grid .v-staff-11,
+#tt-staff:checked ~ #q-12:checked ~ .booking-grid .v-staff-12,
+#tt-staff:checked ~ #q-13:checked ~ .booking-grid .v-staff-13,
+#tt-staff:checked ~ #q-14:checked ~ .booking-grid .v-staff-14,
+#tt-staff:checked ~ #q-15:checked ~ .booking-grid .v-staff-15,
+#tt-staff:checked ~ #q-16:checked ~ .booking-grid .v-staff-16,
+#tt-staff:checked ~ #q-17:checked ~ .booking-grid .v-staff-17,
+#tt-staff:checked ~ #q-18:checked ~ .booking-grid .v-staff-18,
+#tt-staff:checked ~ #q-19:checked ~ .booking-grid .v-staff-19,
+#tt-staff:checked ~ #q-20:checked ~ .booking-grid .v-staff-20,
+#tt-staff:checked ~ #q-21:checked ~ .booking-grid .v-staff-21,
+#tt-staff:checked ~ #q-22:checked ~ .booking-grid .v-staff-22,
+#tt-staff:checked ~ #q-23:checked ~ .booking-grid .v-staff-23,
+#tt-staff:checked ~ #q-24:checked ~ .booking-grid .v-staff-24,
+#tt-staff:checked ~ #q-25:checked ~ .booking-grid .v-staff-25{ display:inline; }
+/* student, $5 a seat */
+#tt-student:checked ~ #q-1:checked ~ .booking-grid .v-student-1,
+#tt-student:checked ~ #q-2:checked ~ .booking-grid .v-student-2,
+#tt-student:checked ~ #q-3:checked ~ .booking-grid .v-student-3,
+#tt-student:checked ~ #q-4:checked ~ .booking-grid .v-student-4,
+#tt-student:checked ~ #q-5:checked ~ .booking-grid .v-student-5,
+#tt-student:checked ~ #q-6:checked ~ .booking-grid .v-student-6,
+#tt-student:checked ~ #q-7:checked ~ .booking-grid .v-student-7,
+#tt-student:checked ~ #q-8:checked ~ .booking-grid .v-student-8,
+#tt-student:checked ~ #q-9:checked ~ .booking-grid .v-student-9,
+#tt-student:checked ~ #q-10:checked ~ .booking-grid .v-student-10,
+#tt-student:checked ~ #q-11:checked ~ .booking-grid .v-student-11,
+#tt-student:checked ~ #q-12:checked ~ .booking-grid .v-student-12,
+#tt-student:checked ~ #q-13:checked ~ .booking-grid .v-student-13,
+#tt-student:checked ~ #q-14:checked ~ .booking-grid .v-student-14,
+#tt-student:checked ~ #q-15:checked ~ .booking-grid .v-student-15,
+#tt-student:checked ~ #q-16:checked ~ .booking-grid .v-student-16,
+#tt-student:checked ~ #q-17:checked ~ .booking-grid .v-student-17,
+#tt-student:checked ~ #q-18:checked ~ .booking-grid .v-student-18,
+#tt-student:checked ~ #q-19:checked ~ .booking-grid .v-student-19,
+#tt-student:checked ~ #q-20:checked ~ .booking-grid .v-student-20,
+#tt-student:checked ~ #q-21:checked ~ .booking-grid .v-student-21,
+#tt-student:checked ~ #q-22:checked ~ .booking-grid .v-student-22,
+#tt-student:checked ~ #q-23:checked ~ .booking-grid .v-student-23,
+#tt-student:checked ~ #q-24:checked ~ .booking-grid .v-student-24,
+#tt-student:checked ~ #q-25:checked ~ .booking-grid .v-student-25{ display:inline; }
+/* other, $7 a seat */
+#tt-other:checked ~ #q-1:checked ~ .booking-grid .v-other-1,
+#tt-other:checked ~ #q-2:checked ~ .booking-grid .v-other-2,
+#tt-other:checked ~ #q-3:checked ~ .booking-grid .v-other-3,
+#tt-other:checked ~ #q-4:checked ~ .booking-grid .v-other-4,
+#tt-other:checked ~ #q-5:checked ~ .booking-grid .v-other-5,
+#tt-other:checked ~ #q-6:checked ~ .booking-grid .v-other-6,
+#tt-other:checked ~ #q-7:checked ~ .booking-grid .v-other-7,
+#tt-other:checked ~ #q-8:checked ~ .booking-grid .v-other-8,
+#tt-other:checked ~ #q-9:checked ~ .booking-grid .v-other-9,
+#tt-other:checked ~ #q-10:checked ~ .booking-grid .v-other-10,
+#tt-other:checked ~ #q-11:checked ~ .booking-grid .v-other-11,
+#tt-other:checked ~ #q-12:checked ~ .booking-grid .v-other-12,
+#tt-other:checked ~ #q-13:checked ~ .booking-grid .v-other-13,
+#tt-other:checked ~ #q-14:checked ~ .booking-grid .v-other-14,
+#tt-other:checked ~ #q-15:checked ~ .booking-grid .v-other-15,
+#tt-other:checked ~ #q-16:checked ~ .booking-grid .v-other-16,
+#tt-other:checked ~ #q-17:checked ~ .booking-grid .v-other-17,
+#tt-other:checked ~ #q-18:checked ~ .booking-grid .v-other-18,
+#tt-other:checked ~ #q-19:checked ~ .booking-grid .v-other-19,
+#tt-other:checked ~ #q-20:checked ~ .booking-grid .v-other-20,
+#tt-other:checked ~ #q-21:checked ~ .booking-grid .v-other-21,
+#tt-other:checked ~ #q-22:checked ~ .booking-grid .v-other-22,
+#tt-other:checked ~ #q-23:checked ~ .booking-grid .v-other-23,
+#tt-other:checked ~ #q-24:checked ~ .booking-grid .v-other-24,
+#tt-other:checked ~ #q-25:checked ~ .booking-grid .v-other-25{ display:inline; }
+
+
+/* same campus picked for both ends */
+#f0:checked ~ #t0:checked ~ .booking-grid .same,
+#f1:checked ~ #t1:checked ~ .booking-grid .same,
+#f2:checked ~ #t2:checked ~ .booking-grid .same,
+#f3:checked ~ #t3:checked ~ .booking-grid .same,
+#f4:checked ~ #t4:checked ~ .booking-grid .same,
+#f5:checked ~ #t5:checked ~ .booking-grid .same,
+#f6:checked ~ #t6:checked ~ .booking-grid .same,
+#f7:checked ~ #t7:checked ~ .booking-grid .same,
+#f8:checked ~ #t8:checked ~ .booking-grid .same,
+#f9:checked ~ #t9:checked ~ .booking-grid .same,
+#f10:checked ~ #t10:checked ~ .booking-grid .same,
+#f11:checked ~ #t11:checked ~ .booking-grid .same,
+#f12:checked ~ #t12:checked ~ .booking-grid .same,
+#f13:checked ~ #t13:checked ~ .booking-grid .same,
+#f14:checked ~ #t14:checked ~ .booking-grid .same,
+#f15:checked ~ #t15:checked ~ .booking-grid .same,
+#f16:checked ~ #t16:checked ~ .booking-grid .same,
+#f17:checked ~ #t17:checked ~ .booking-grid .same,
+#f18:checked ~ #t18:checked ~ .booking-grid .same,
+#f19:checked ~ #t19:checked ~ .booking-grid .same{ display:block; }
+#f0:checked ~ #t0:checked ~ .booking-grid .tk-warn,
+#f1:checked ~ #t1:checked ~ .booking-grid .tk-warn,
+#f2:checked ~ #t2:checked ~ .booking-grid .tk-warn,
+#f3:checked ~ #t3:checked ~ .booking-grid .tk-warn,
+#f4:checked ~ #t4:checked ~ .booking-grid .tk-warn,
+#f5:checked ~ #t5:checked ~ .booking-grid .tk-warn,
+#f6:checked ~ #t6:checked ~ .booking-grid .tk-warn,
+#f7:checked ~ #t7:checked ~ .booking-grid .tk-warn,
+#f8:checked ~ #t8:checked ~ .booking-grid .tk-warn,
+#f9:checked ~ #t9:checked ~ .booking-grid .tk-warn,
+#f10:checked ~ #t10:checked ~ .booking-grid .tk-warn,
+#f11:checked ~ #t11:checked ~ .booking-grid .tk-warn,
+#f12:checked ~ #t12:checked ~ .booking-grid .tk-warn,
+#f13:checked ~ #t13:checked ~ .booking-grid .tk-warn,
+#f14:checked ~ #t14:checked ~ .booking-grid .tk-warn,
+#f15:checked ~ #t15:checked ~ .booking-grid .tk-warn,
+#f16:checked ~ #t16:checked ~ .booking-grid .tk-warn,
+#f17:checked ~ #t17:checked ~ .booking-grid .tk-warn,
+#f18:checked ~ #t18:checked ~ .booking-grid .tk-warn,
+#f19:checked ~ #t19:checked ~ .booking-grid .tk-warn{ display:block; }
+#f0:checked ~ #t0:checked ~ .booking-grid .btn-wide,
+#f1:checked ~ #t1:checked ~ .booking-grid .btn-wide,
+#f2:checked ~ #t2:checked ~ .booking-grid .btn-wide,
+#f3:checked ~ #t3:checked ~ .booking-grid .btn-wide,
+#f4:checked ~ #t4:checked ~ .booking-grid .btn-wide,
+#f5:checked ~ #t5:checked ~ .booking-grid .btn-wide,
+#f6:checked ~ #t6:checked ~ .booking-grid .btn-wide,
+#f7:checked ~ #t7:checked ~ .booking-grid .btn-wide,
+#f8:checked ~ #t8:checked ~ .booking-grid .btn-wide,
+#f9:checked ~ #t9:checked ~ .booking-grid .btn-wide,
+#f10:checked ~ #t10:checked ~ .booking-grid .btn-wide,
+#f11:checked ~ #t11:checked ~ .booking-grid .btn-wide,
+#f12:checked ~ #t12:checked ~ .booking-grid .btn-wide,
+#f13:checked ~ #t13:checked ~ .booking-grid .btn-wide,
+#f14:checked ~ #t14:checked ~ .booking-grid .btn-wide,
+#f15:checked ~ #t15:checked ~ .booking-grid .btn-wide,
+#f16:checked ~ #t16:checked ~ .booking-grid .btn-wide,
+#f17:checked ~ #t17:checked ~ .booking-grid .btn-wide,
+#f18:checked ~ #t18:checked ~ .booking-grid .btn-wide,
+#f19:checked ~ #t19:checked ~ .booking-grid .btn-wide{ opacity:.45; box-shadow:none; }
+
+
+/* No rule opens a panel from radio focus. Chrome matches :focus-visible on
+   any focused radio, mouse or keyboard, so such a rule kept the panel open
+   after a click. Closed-and-arrowing is also how a native select behaves. */
+
+/* chosen option inside an open panel */
+#h0:checked ~ .booking-grid .dd-opt[for="h0"],
+#h1:checked ~ .booking-grid .dd-opt[for="h1"],
+#h2:checked ~ .booking-grid .dd-opt[for="h2"],
+#h3:checked ~ .booking-grid .dd-opt[for="h3"],
+#h4:checked ~ .booking-grid .dd-opt[for="h4"],
+#h5:checked ~ .booking-grid .dd-opt[for="h5"],
+#h6:checked ~ .booking-grid .dd-opt[for="h6"],
+#h7:checked ~ .booking-grid .dd-opt[for="h7"],
+#h8:checked ~ .booking-grid .dd-opt[for="h8"],
+#h9:checked ~ .booking-grid .dd-opt[for="h9"],
+#h10:checked ~ .booking-grid .dd-opt[for="h10"],
+#h11:checked ~ .booking-grid .dd-opt[for="h11"],
+#h12:checked ~ .booking-grid .dd-opt[for="h12"],
+#h13:checked ~ .booking-grid .dd-opt[for="h13"],
+#h14:checked ~ .booking-grid .dd-opt[for="h14"],
+#h15:checked ~ .booking-grid .dd-opt[for="h15"],
+#h16:checked ~ .booking-grid .dd-opt[for="h16"]{ background:var(--navy); color:#fff; }
+
+/* ngày tháng năm đã chọn */
+#dy1:checked ~ .booking-grid .dd-opt[for="dy1"],
+#dy2:checked ~ .booking-grid .dd-opt[for="dy2"],
+#dy3:checked ~ .booking-grid .dd-opt[for="dy3"],
+#dy4:checked ~ .booking-grid .dd-opt[for="dy4"],
+#dy5:checked ~ .booking-grid .dd-opt[for="dy5"],
+#dy6:checked ~ .booking-grid .dd-opt[for="dy6"],
+#dy7:checked ~ .booking-grid .dd-opt[for="dy7"],
+#dy8:checked ~ .booking-grid .dd-opt[for="dy8"],
+#dy9:checked ~ .booking-grid .dd-opt[for="dy9"],
+#dy10:checked ~ .booking-grid .dd-opt[for="dy10"],
+#dy11:checked ~ .booking-grid .dd-opt[for="dy11"],
+#dy12:checked ~ .booking-grid .dd-opt[for="dy12"],
+#dy13:checked ~ .booking-grid .dd-opt[for="dy13"],
+#dy14:checked ~ .booking-grid .dd-opt[for="dy14"],
+#dy15:checked ~ .booking-grid .dd-opt[for="dy15"],
+#dy16:checked ~ .booking-grid .dd-opt[for="dy16"],
+#dy17:checked ~ .booking-grid .dd-opt[for="dy17"],
+#dy18:checked ~ .booking-grid .dd-opt[for="dy18"],
+#dy19:checked ~ .booking-grid .dd-opt[for="dy19"],
+#dy20:checked ~ .booking-grid .dd-opt[for="dy20"],
+#dy21:checked ~ .booking-grid .dd-opt[for="dy21"],
+#dy22:checked ~ .booking-grid .dd-opt[for="dy22"],
+#dy23:checked ~ .booking-grid .dd-opt[for="dy23"],
+#dy24:checked ~ .booking-grid .dd-opt[for="dy24"],
+#dy25:checked ~ .booking-grid .dd-opt[for="dy25"],
+#dy26:checked ~ .booking-grid .dd-opt[for="dy26"],
+#dy27:checked ~ .booking-grid .dd-opt[for="dy27"],
+#dy28:checked ~ .booking-grid .dd-opt[for="dy28"],
+#dy29:checked ~ .booking-grid .dd-opt[for="dy29"],
+#dy30:checked ~ .booking-grid .dd-opt[for="dy30"],
+#dy31:checked ~ .booking-grid .dd-opt[for="dy31"],
+#mn0:checked ~ .booking-grid .dd-opt[for="mn0"],
+#mn1:checked ~ .booking-grid .dd-opt[for="mn1"],
+#mn2:checked ~ .booking-grid .dd-opt[for="mn2"],
+#mn3:checked ~ .booking-grid .dd-opt[for="mn3"],
+#mn4:checked ~ .booking-grid .dd-opt[for="mn4"],
+#mn5:checked ~ .booking-grid .dd-opt[for="mn5"],
+#mn6:checked ~ .booking-grid .dd-opt[for="mn6"],
+#mn7:checked ~ .booking-grid .dd-opt[for="mn7"],
+#mn8:checked ~ .booking-grid .dd-opt[for="mn8"],
+#mn9:checked ~ .booking-grid .dd-opt[for="mn9"],
+#mn10:checked ~ .booking-grid .dd-opt[for="mn10"],
+#mn11:checked ~ .booking-grid .dd-opt[for="mn11"],
+#yr0:checked ~ .booking-grid .dd-opt[for="yr0"],
+#yr1:checked ~ .booking-grid .dd-opt[for="yr1"]{ background:var(--navy); color:#fff; }
+#dy1:checked ~ .booking-grid .dy1,
+#dy2:checked ~ .booking-grid .dy2,
+#dy3:checked ~ .booking-grid .dy3,
+#dy4:checked ~ .booking-grid .dy4,
+#dy5:checked ~ .booking-grid .dy5,
+#dy6:checked ~ .booking-grid .dy6,
+#dy7:checked ~ .booking-grid .dy7,
+#dy8:checked ~ .booking-grid .dy8,
+#dy9:checked ~ .booking-grid .dy9,
+#dy10:checked ~ .booking-grid .dy10,
+#dy11:checked ~ .booking-grid .dy11,
+#dy12:checked ~ .booking-grid .dy12,
+#dy13:checked ~ .booking-grid .dy13,
+#dy14:checked ~ .booking-grid .dy14,
+#dy15:checked ~ .booking-grid .dy15,
+#dy16:checked ~ .booking-grid .dy16,
+#dy17:checked ~ .booking-grid .dy17,
+#dy18:checked ~ .booking-grid .dy18,
+#dy19:checked ~ .booking-grid .dy19,
+#dy20:checked ~ .booking-grid .dy20,
+#dy21:checked ~ .booking-grid .dy21,
+#dy22:checked ~ .booking-grid .dy22,
+#dy23:checked ~ .booking-grid .dy23,
+#dy24:checked ~ .booking-grid .dy24,
+#dy25:checked ~ .booking-grid .dy25,
+#dy26:checked ~ .booking-grid .dy26,
+#dy27:checked ~ .booking-grid .dy27,
+#dy28:checked ~ .booking-grid .dy28,
+#dy29:checked ~ .booking-grid .dy29,
+#dy30:checked ~ .booking-grid .dy30,
+#dy31:checked ~ .booking-grid .dy31,
+#mn0:checked ~ .booking-grid .mn0,
+#mn1:checked ~ .booking-grid .mn1,
+#mn2:checked ~ .booking-grid .mn2,
+#mn3:checked ~ .booking-grid .mn3,
+#mn4:checked ~ .booking-grid .mn4,
+#mn5:checked ~ .booking-grid .mn5,
+#mn6:checked ~ .booking-grid .mn6,
+#mn7:checked ~ .booking-grid .mn7,
+#mn8:checked ~ .booking-grid .mn8,
+#mn9:checked ~ .booking-grid .mn9,
+#mn10:checked ~ .booking-grid .mn10,
+#mn11:checked ~ .booking-grid .mn11,
+#yr0:checked ~ .booking-grid .yr0,
+#yr1:checked ~ .booking-grid .yr1{ display:inline; }
+#dy1:focus-visible ~ .booking-grid .dd-opt[for="dy1"],
+#dy2:focus-visible ~ .booking-grid .dd-opt[for="dy2"],
+#dy3:focus-visible ~ .booking-grid .dd-opt[for="dy3"],
+#dy4:focus-visible ~ .booking-grid .dd-opt[for="dy4"],
+#dy5:focus-visible ~ .booking-grid .dd-opt[for="dy5"],
+#dy6:focus-visible ~ .booking-grid .dd-opt[for="dy6"],
+#dy7:focus-visible ~ .booking-grid .dd-opt[for="dy7"],
+#dy8:focus-visible ~ .booking-grid .dd-opt[for="dy8"],
+#dy9:focus-visible ~ .booking-grid .dd-opt[for="dy9"],
+#dy10:focus-visible ~ .booking-grid .dd-opt[for="dy10"],
+#dy11:focus-visible ~ .booking-grid .dd-opt[for="dy11"],
+#dy12:focus-visible ~ .booking-grid .dd-opt[for="dy12"],
+#dy13:focus-visible ~ .booking-grid .dd-opt[for="dy13"],
+#dy14:focus-visible ~ .booking-grid .dd-opt[for="dy14"],
+#dy15:focus-visible ~ .booking-grid .dd-opt[for="dy15"],
+#dy16:focus-visible ~ .booking-grid .dd-opt[for="dy16"],
+#dy17:focus-visible ~ .booking-grid .dd-opt[for="dy17"],
+#dy18:focus-visible ~ .booking-grid .dd-opt[for="dy18"],
+#dy19:focus-visible ~ .booking-grid .dd-opt[for="dy19"],
+#dy20:focus-visible ~ .booking-grid .dd-opt[for="dy20"],
+#dy21:focus-visible ~ .booking-grid .dd-opt[for="dy21"],
+#dy22:focus-visible ~ .booking-grid .dd-opt[for="dy22"],
+#dy23:focus-visible ~ .booking-grid .dd-opt[for="dy23"],
+#dy24:focus-visible ~ .booking-grid .dd-opt[for="dy24"],
+#dy25:focus-visible ~ .booking-grid .dd-opt[for="dy25"],
+#dy26:focus-visible ~ .booking-grid .dd-opt[for="dy26"],
+#dy27:focus-visible ~ .booking-grid .dd-opt[for="dy27"],
+#dy28:focus-visible ~ .booking-grid .dd-opt[for="dy28"],
+#dy29:focus-visible ~ .booking-grid .dd-opt[for="dy29"],
+#dy30:focus-visible ~ .booking-grid .dd-opt[for="dy30"],
+#dy31:focus-visible ~ .booking-grid .dd-opt[for="dy31"],
+#mn0:focus-visible ~ .booking-grid .dd-opt[for="mn0"],
+#mn1:focus-visible ~ .booking-grid .dd-opt[for="mn1"],
+#mn2:focus-visible ~ .booking-grid .dd-opt[for="mn2"],
+#mn3:focus-visible ~ .booking-grid .dd-opt[for="mn3"],
+#mn4:focus-visible ~ .booking-grid .dd-opt[for="mn4"],
+#mn5:focus-visible ~ .booking-grid .dd-opt[for="mn5"],
+#mn6:focus-visible ~ .booking-grid .dd-opt[for="mn6"],
+#mn7:focus-visible ~ .booking-grid .dd-opt[for="mn7"],
+#mn8:focus-visible ~ .booking-grid .dd-opt[for="mn8"],
+#mn9:focus-visible ~ .booking-grid .dd-opt[for="mn9"],
+#mn10:focus-visible ~ .booking-grid .dd-opt[for="mn10"],
+#mn11:focus-visible ~ .booking-grid .dd-opt[for="mn11"],
+#yr0:focus-visible ~ .booking-grid .dd-opt[for="yr0"],
+#yr1:focus-visible ~ .booking-grid .dd-opt[for="yr1"]{ outline:3px solid var(--blue); outline-offset:-3px; }
+
+/* campus đã chọn ở đầu kia thì khoá lại */
+#f0:checked ~ .booking-grid .dd-t .camp[for="t0"],
+#f1:checked ~ .booking-grid .dd-t .camp[for="t1"],
+#f2:checked ~ .booking-grid .dd-t .camp[for="t2"],
+#f3:checked ~ .booking-grid .dd-t .camp[for="t3"],
+#f4:checked ~ .booking-grid .dd-t .camp[for="t4"],
+#f5:checked ~ .booking-grid .dd-t .camp[for="t5"],
+#f6:checked ~ .booking-grid .dd-t .camp[for="t6"],
+#f7:checked ~ .booking-grid .dd-t .camp[for="t7"],
+#f8:checked ~ .booking-grid .dd-t .camp[for="t8"],
+#f9:checked ~ .booking-grid .dd-t .camp[for="t9"],
+#f10:checked ~ .booking-grid .dd-t .camp[for="t10"],
+#f11:checked ~ .booking-grid .dd-t .camp[for="t11"],
+#f12:checked ~ .booking-grid .dd-t .camp[for="t12"],
+#f13:checked ~ .booking-grid .dd-t .camp[for="t13"],
+#f14:checked ~ .booking-grid .dd-t .camp[for="t14"],
+#f15:checked ~ .booking-grid .dd-t .camp[for="t15"],
+#f16:checked ~ .booking-grid .dd-t .camp[for="t16"],
+#f17:checked ~ .booking-grid .dd-t .camp[for="t17"],
+#f18:checked ~ .booking-grid .dd-t .camp[for="t18"],
+#f19:checked ~ .booking-grid .dd-t .camp[for="t19"]{ opacity:.3; pointer-events:none; }
+#t0:checked ~ .booking-grid .dd-f .camp[for="f0"],
+#t1:checked ~ .booking-grid .dd-f .camp[for="f1"],
+#t2:checked ~ .booking-grid .dd-f .camp[for="f2"],
+#t3:checked ~ .booking-grid .dd-f .camp[for="f3"],
+#t4:checked ~ .booking-grid .dd-f .camp[for="f4"],
+#t5:checked ~ .booking-grid .dd-f .camp[for="f5"],
+#t6:checked ~ .booking-grid .dd-f .camp[for="f6"],
+#t7:checked ~ .booking-grid .dd-f .camp[for="f7"],
+#t8:checked ~ .booking-grid .dd-f .camp[for="f8"],
+#t9:checked ~ .booking-grid .dd-f .camp[for="f9"],
+#t10:checked ~ .booking-grid .dd-f .camp[for="f10"],
+#t11:checked ~ .booking-grid .dd-f .camp[for="f11"],
+#t12:checked ~ .booking-grid .dd-f .camp[for="f12"],
+#t13:checked ~ .booking-grid .dd-f .camp[for="f13"],
+#t14:checked ~ .booking-grid .dd-f .camp[for="f14"],
+#t15:checked ~ .booking-grid .dd-f .camp[for="f15"],
+#t16:checked ~ .booking-grid .dd-f .camp[for="f16"],
+#t17:checked ~ .booking-grid .dd-f .camp[for="f17"],
+#t18:checked ~ .booking-grid .dd-f .camp[for="f18"],
+#t19:checked ~ .booking-grid .dd-f .camp[for="f19"]{ opacity:.3; pointer-events:none; }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#book">Skip to booking</a>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="16" rx="4"/><rect x="7" y="9" width="7" height="6" rx="1.5" class="w"/><rect x="18" y="9" width="7" height="6" rx="1.5" class="w"/><circle cx="10" cy="24" r="3"/><circle cx="22" cy="24" r="3"/></svg></span><span class="brand-text">HCC <b>Metro Bus</b></span></a>
+    <nav class="nav-links" aria-label="Main"><a href="#book">Book</a><a href="#fares">Fares</a><a href="#campuses">Campuses</a><a href="#how">How it works</a><a href="#contact">Contact us</a></nav>
+    <a class="btn btn-sm" href="#book">Buy a ticket</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap hero-in">
+      <div class="hero-copy">
+        <p class="eyebrow">Houston Community College shuttle</p>
+        <h1>Get to class.<br><span class="hl">Every hour, on the hour.</span></h1>
+        <p class="lede">One bus an hour between every HCC campus — from Katy to Missouri City, Acres Homes to the Medical Center. Reserve a seat in under a minute.</p>
+        <div class="hero-cta"><a class="btn" href="#book">Book a seat</a><a class="btn btn-ghost" href="#campuses">See all campuses</a></div>
+        <ul class="stats">
+          <li><b>20</b><span>campuses</span></li>
+          <li><b>6</b><span>colleges</span></li>
+          <li><b>1/hr</b><span>departures</span></li>
+          <li><b>25</b><span>seats max</span></li>
+        </ul>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="road">
+          <span class="lane"></span>
+          <svg class="bus" viewBox="0 0 220 120">
+            <rect x="10" y="14" width="190" height="72" rx="16" class="body"/>
+            <rect x="10" y="14" width="190" height="20" rx="16" class="roof"/>
+            <rect x="24" y="40" width="40" height="26" rx="5" class="glass"/><rect x="72" y="40" width="40" height="26" rx="5" class="glass"/>
+            <rect x="120" y="40" width="40" height="26" rx="5" class="glass"/><rect x="168" y="40" width="22" height="26" rx="5" class="glass"/>
+            <rect x="10" y="72" width="190" height="7" class="stripe"/>
+            <circle cx="56" cy="92" r="14" class="tyre"/><circle cx="56" cy="92" r="6" class="hub"/>
+            <circle cx="162" cy="92" r="14" class="tyre"/><circle cx="162" cy="92" r="6" class="hub"/>
+            <rect x="192" y="44" width="10" height="9" rx="3" class="lamp"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="book" id="book">
+    <div class="wrap">
+      <header class="sec-head">
+        <h2>Book your seat</h2>
+        <p>Pick a route, a departure and how many seats. The ticket on the right updates as you choose.</p>
+      </header>
+
+      <form class="booking" action="#" method="get">
+  <input class="state" type="radio" name="from" id="f0" value="Central Campus" checked>
+  <input class="state" type="radio" name="from" id="f1" value="South Campus">
+  <input class="state" type="radio" name="from" id="f2" value="Coleman Campus">
+  <input class="state" type="radio" name="from" id="f3" value="Coleman College at Midtown">
+  <input class="state" type="radio" name="from" id="f4" value="Acres Homes Campus">
+  <input class="state" type="radio" name="from" id="f5" value="Automotive Technology Training Center">
+  <input class="state" type="radio" name="from" id="f6" value="Northeast Campus">
+  <input class="state" type="radio" name="from" id="f7" value="North Forest Campus">
+  <input class="state" type="radio" name="from" id="f8" value="Northline Campus">
+  <input class="state" type="radio" name="from" id="f9" value="Alief Bissonnet Campus">
+  <input class="state" type="radio" name="from" id="f10" value="Alief Hayes Campus">
+  <input class="state" type="radio" name="from" id="f11" value="Katy Campus">
+  <input class="state" type="radio" name="from" id="f12" value="Spring Branch Campus">
+  <input class="state" type="radio" name="from" id="f13" value="West Houston Institute">
+  <input class="state" type="radio" name="from" id="f14" value="Eastside Campus">
+  <input class="state" type="radio" name="from" id="f15" value="Felix Fraga Academic Campus">
+  <input class="state" type="radio" name="from" id="f16" value="Brays Oaks Campus">
+  <input class="state" type="radio" name="from" id="f17" value="Missouri City Campus">
+  <input class="state" type="radio" name="from" id="f18" value="Stafford Campus">
+  <input class="state" type="radio" name="from" id="f19" value="West Loop Campus">
+  <input class="state" type="radio" name="to" id="t0" value="Central Campus">
+  <input class="state" type="radio" name="to" id="t1" value="South Campus">
+  <input class="state" type="radio" name="to" id="t2" value="Coleman Campus" checked>
+  <input class="state" type="radio" name="to" id="t3" value="Coleman College at Midtown">
+  <input class="state" type="radio" name="to" id="t4" value="Acres Homes Campus">
+  <input class="state" type="radio" name="to" id="t5" value="Automotive Technology Training Center">
+  <input class="state" type="radio" name="to" id="t6" value="Northeast Campus">
+  <input class="state" type="radio" name="to" id="t7" value="North Forest Campus">
+  <input class="state" type="radio" name="to" id="t8" value="Northline Campus">
+  <input class="state" type="radio" name="to" id="t9" value="Alief Bissonnet Campus">
+  <input class="state" type="radio" name="to" id="t10" value="Alief Hayes Campus">
+  <input class="state" type="radio" name="to" id="t11" value="Katy Campus">
+  <input class="state" type="radio" name="to" id="t12" value="Spring Branch Campus">
+  <input class="state" type="radio" name="to" id="t13" value="West Houston Institute">
+  <input class="state" type="radio" name="to" id="t14" value="Eastside Campus">
+  <input class="state" type="radio" name="to" id="t15" value="Felix Fraga Academic Campus">
+  <input class="state" type="radio" name="to" id="t16" value="Brays Oaks Campus">
+  <input class="state" type="radio" name="to" id="t17" value="Missouri City Campus">
+  <input class="state" type="radio" name="to" id="t18" value="Stafford Campus">
+  <input class="state" type="radio" name="to" id="t19" value="West Loop Campus">
+  <input class="state" type="radio" name="time" id="h0" value="6:00 AM">
+  <input class="state" type="radio" name="time" id="h1" value="7:00 AM">
+  <input class="state" type="radio" name="time" id="h2" value="8:00 AM" checked>
+  <input class="state" type="radio" name="time" id="h3" value="9:00 AM">
+  <input class="state" type="radio" name="time" id="h4" value="10:00 AM">
+  <input class="state" type="radio" name="time" id="h5" value="11:00 AM">
+  <input class="state" type="radio" name="time" id="h6" value="12:00 PM">
+  <input class="state" type="radio" name="time" id="h7" value="1:00 PM">
+  <input class="state" type="radio" name="time" id="h8" value="2:00 PM">
+  <input class="state" type="radio" name="time" id="h9" value="3:00 PM">
+  <input class="state" type="radio" name="time" id="h10" value="4:00 PM">
+  <input class="state" type="radio" name="time" id="h11" value="5:00 PM">
+  <input class="state" type="radio" name="time" id="h12" value="6:00 PM">
+  <input class="state" type="radio" name="time" id="h13" value="7:00 PM">
+  <input class="state" type="radio" name="time" id="h14" value="8:00 PM">
+  <input class="state" type="radio" name="time" id="h15" value="9:00 PM">
+  <input class="state" type="radio" name="time" id="h16" value="10:00 PM">
+  <input class="state" type="radio" name="day" id="dy1" value="1">
+  <input class="state" type="radio" name="day" id="dy2" value="2">
+  <input class="state" type="radio" name="day" id="dy3" value="3">
+  <input class="state" type="radio" name="day" id="dy4" value="4">
+  <input class="state" type="radio" name="day" id="dy5" value="5">
+  <input class="state" type="radio" name="day" id="dy6" value="6">
+  <input class="state" type="radio" name="day" id="dy7" value="7">
+  <input class="state" type="radio" name="day" id="dy8" value="8">
+  <input class="state" type="radio" name="day" id="dy9" value="9">
+  <input class="state" type="radio" name="day" id="dy10" value="10">
+  <input class="state" type="radio" name="day" id="dy11" value="11">
+  <input class="state" type="radio" name="day" id="dy12" value="12">
+  <input class="state" type="radio" name="day" id="dy13" value="13">
+  <input class="state" type="radio" name="day" id="dy14" value="14">
+  <input class="state" type="radio" name="day" id="dy15" value="15">
+  <input class="state" type="radio" name="day" id="dy16" value="16">
+  <input class="state" type="radio" name="day" id="dy17" value="17">
+  <input class="state" type="radio" name="day" id="dy18" value="18">
+  <input class="state" type="radio" name="day" id="dy19" value="19">
+  <input class="state" type="radio" name="day" id="dy20" value="20" checked>
+  <input class="state" type="radio" name="day" id="dy21" value="21">
+  <input class="state" type="radio" name="day" id="dy22" value="22">
+  <input class="state" type="radio" name="day" id="dy23" value="23">
+  <input class="state" type="radio" name="day" id="dy24" value="24">
+  <input class="state" type="radio" name="day" id="dy25" value="25">
+  <input class="state" type="radio" name="day" id="dy26" value="26">
+  <input class="state" type="radio" name="day" id="dy27" value="27">
+  <input class="state" type="radio" name="day" id="dy28" value="28">
+  <input class="state" type="radio" name="day" id="dy29" value="29">
+  <input class="state" type="radio" name="day" id="dy30" value="30">
+  <input class="state" type="radio" name="day" id="dy31" value="31">
+  <input class="state" type="radio" name="mon" id="mn0" value="Jan">
+  <input class="state" type="radio" name="mon" id="mn1" value="Feb">
+  <input class="state" type="radio" name="mon" id="mn2" value="Mar">
+  <input class="state" type="radio" name="mon" id="mn3" value="Apr">
+  <input class="state" type="radio" name="mon" id="mn4" value="May">
+  <input class="state" type="radio" name="mon" id="mn5" value="Jun">
+  <input class="state" type="radio" name="mon" id="mn6" value="Jul">
+  <input class="state" type="radio" name="mon" id="mn7" value="Aug">
+  <input class="state" type="radio" name="mon" id="mn8" value="Sep">
+  <input class="state" type="radio" name="mon" id="mn9" value="Oct" checked>
+  <input class="state" type="radio" name="mon" id="mn10" value="Nov">
+  <input class="state" type="radio" name="mon" id="mn11" value="Dec">
+  <input class="state" type="radio" name="yr" id="yr0" value="2026" checked>
+  <input class="state" type="radio" name="yr" id="yr1" value="2027">
+  <input class="state" type="radio" name="co" id="co-closed" checked>
+  <input class="state" type="radio" name="co" id="co-form">
+  <input class="state" type="radio" name="co" id="co-paid">
+  <input class="state" type="radio" name="fare" id="tt-staff" checked>
+  <input class="state" type="radio" name="fare" id="tt-student">
+  <input class="state" type="radio" name="fare" id="tt-other">
+  <input class="state" type="radio" name="qty" id="q-1" checked>
+  <input class="state" type="radio" name="qty" id="q-2">
+  <input class="state" type="radio" name="qty" id="q-3">
+  <input class="state" type="radio" name="qty" id="q-4">
+  <input class="state" type="radio" name="qty" id="q-5">
+  <input class="state" type="radio" name="qty" id="q-6">
+  <input class="state" type="radio" name="qty" id="q-7">
+  <input class="state" type="radio" name="qty" id="q-8">
+  <input class="state" type="radio" name="qty" id="q-9">
+  <input class="state" type="radio" name="qty" id="q-10">
+  <input class="state" type="radio" name="qty" id="q-11">
+  <input class="state" type="radio" name="qty" id="q-12">
+  <input class="state" type="radio" name="qty" id="q-13">
+  <input class="state" type="radio" name="qty" id="q-14">
+  <input class="state" type="radio" name="qty" id="q-15">
+  <input class="state" type="radio" name="qty" id="q-16">
+  <input class="state" type="radio" name="qty" id="q-17">
+  <input class="state" type="radio" name="qty" id="q-18">
+  <input class="state" type="radio" name="qty" id="q-19">
+  <input class="state" type="radio" name="qty" id="q-20">
+  <input class="state" type="radio" name="qty" id="q-21">
+  <input class="state" type="radio" name="qty" id="q-22">
+  <input class="state" type="radio" name="qty" id="q-23">
+  <input class="state" type="radio" name="qty" id="q-24">
+  <input class="state" type="radio" name="qty" id="q-25">
+
+        <div class="booking-grid">
+
+          <div class="panel">
+            <h3 class="panel-h"><span class="step">1</span>Route</h3>
+            <div class="row">
+              <div class="field">
+                <span class="lab">From</span>
+                <div class="dd dd-f" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Departure campus">
+                  <span class="dd-cur swapbox">
+                    <b class="fl0">Central Campus</b>
+                    <b class="fl1">South Campus</b>
+                    <b class="fl2">Coleman Campus</b>
+                    <b class="fl3">Coleman College at Midtown</b>
+                    <b class="fl4">Acres Homes Campus</b>
+                    <b class="fl5">Automotive Technology Training Center</b>
+                    <b class="fl6">Northeast Campus</b>
+                    <b class="fl7">North Forest Campus</b>
+                    <b class="fl8">Northline Campus</b>
+                    <b class="fl9">Alief Bissonnet Campus</b>
+                    <b class="fl10">Alief Hayes Campus</b>
+                    <b class="fl11">Katy Campus</b>
+                    <b class="fl12">Spring Branch Campus</b>
+                    <b class="fl13">West Houston Institute</b>
+                    <b class="fl14">Eastside Campus</b>
+                    <b class="fl15">Felix Fraga Academic Campus</b>
+                    <b class="fl16">Brays Oaks Campus</b>
+                    <b class="fl17">Missouri City Campus</b>
+                    <b class="fl18">Stafford Campus</b>
+                    <b class="fl19">West Loop Campus</b>
+                  </span>
+                  <svg class="dd-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                  <div class="dd-panel">
+              <div class="cg">HCC Central College</div>
+              <label class="camp" for="f0"><b>Central Campus</b><i>Midtown / Third Ward</i></label>
+              <label class="camp" for="f1"><b>South Campus</b><i>South Houston</i></label>
+              <div class="cg">HCC Coleman College for Health Sciences</div>
+              <label class="camp" for="f2"><b>Coleman Campus</b><i>Texas Medical Center</i></label>
+              <label class="camp" for="f3"><b>Coleman College at Midtown</b><i>Midtown</i></label>
+              <div class="cg">HCC Northeast College</div>
+              <label class="camp" for="f4"><b>Acres Homes Campus</b><i>Acres Homes</i></label>
+              <label class="camp" for="f5"><b>Automotive Technology Training Center</b><i>Northeast Houston</i></label>
+              <label class="camp" for="f6"><b>Northeast Campus</b><i>Northeast Houston</i></label>
+              <label class="camp" for="f7"><b>North Forest Campus</b><i>North Forest</i></label>
+              <label class="camp" for="f8"><b>Northline Campus</b><i>Northline</i></label>
+              <div class="cg">HCC Northwest College</div>
+              <label class="camp" for="f9"><b>Alief Bissonnet Campus</b><i>Alief</i></label>
+              <label class="camp" for="f10"><b>Alief Hayes Campus</b><i>Alief</i></label>
+              <label class="camp" for="f11"><b>Katy Campus</b><i>Katy</i></label>
+              <label class="camp" for="f12"><b>Spring Branch Campus</b><i>Spring Branch</i></label>
+              <label class="camp" for="f13"><b>West Houston Institute</b><i>West Houston</i></label>
+              <div class="cg">HCC Southeast College</div>
+              <label class="camp" for="f14"><b>Eastside Campus</b><i>Southeast Houston</i></label>
+              <label class="camp" for="f15"><b>Felix Fraga Academic Campus</b><i>Southeast Houston</i></label>
+              <div class="cg">HCC Southwest College</div>
+              <label class="camp" for="f16"><b>Brays Oaks Campus</b><i>Southwest Houston</i></label>
+              <label class="camp" for="f17"><b>Missouri City Campus</b><i>Missouri City</i></label>
+              <label class="camp" for="f18"><b>Stafford Campus</b><i>Stafford</i></label>
+              <label class="camp" for="f19"><b>West Loop Campus</b><i>Near Galleria / Bellaire</i></label>
+                  </div>
+                </div>
+              </div>
+              <span class="swap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4v13M7 20l-3.5-4M7 20l3.5-4M17 20V7M17 4l3.5 4M17 4l-3.5 4"/></svg></span>
+              <div class="field">
+                <span class="lab">To</span>
+                <div class="dd dd-t" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Arrival campus">
+                  <span class="dd-cur swapbox">
+                    <b class="tl0">Central Campus</b>
+                    <b class="tl1">South Campus</b>
+                    <b class="tl2">Coleman Campus</b>
+                    <b class="tl3">Coleman College at Midtown</b>
+                    <b class="tl4">Acres Homes Campus</b>
+                    <b class="tl5">Automotive Technology Training Center</b>
+                    <b class="tl6">Northeast Campus</b>
+                    <b class="tl7">North Forest Campus</b>
+                    <b class="tl8">Northline Campus</b>
+                    <b class="tl9">Alief Bissonnet Campus</b>
+                    <b class="tl10">Alief Hayes Campus</b>
+                    <b class="tl11">Katy Campus</b>
+                    <b class="tl12">Spring Branch Campus</b>
+                    <b class="tl13">West Houston Institute</b>
+                    <b class="tl14">Eastside Campus</b>
+                    <b class="tl15">Felix Fraga Academic Campus</b>
+                    <b class="tl16">Brays Oaks Campus</b>
+                    <b class="tl17">Missouri City Campus</b>
+                    <b class="tl18">Stafford Campus</b>
+                    <b class="tl19">West Loop Campus</b>
+                  </span>
+                  <svg class="dd-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                  <div class="dd-panel">
+              <div class="cg">HCC Central College</div>
+              <label class="camp" for="t0"><b>Central Campus</b><i>Midtown / Third Ward</i></label>
+              <label class="camp" for="t1"><b>South Campus</b><i>South Houston</i></label>
+              <div class="cg">HCC Coleman College for Health Sciences</div>
+              <label class="camp" for="t2"><b>Coleman Campus</b><i>Texas Medical Center</i></label>
+              <label class="camp" for="t3"><b>Coleman College at Midtown</b><i>Midtown</i></label>
+              <div class="cg">HCC Northeast College</div>
+              <label class="camp" for="t4"><b>Acres Homes Campus</b><i>Acres Homes</i></label>
+              <label class="camp" for="t5"><b>Automotive Technology Training Center</b><i>Northeast Houston</i></label>
+              <label class="camp" for="t6"><b>Northeast Campus</b><i>Northeast Houston</i></label>
+              <label class="camp" for="t7"><b>North Forest Campus</b><i>North Forest</i></label>
+              <label class="camp" for="t8"><b>Northline Campus</b><i>Northline</i></label>
+              <div class="cg">HCC Northwest College</div>
+              <label class="camp" for="t9"><b>Alief Bissonnet Campus</b><i>Alief</i></label>
+              <label class="camp" for="t10"><b>Alief Hayes Campus</b><i>Alief</i></label>
+              <label class="camp" for="t11"><b>Katy Campus</b><i>Katy</i></label>
+              <label class="camp" for="t12"><b>Spring Branch Campus</b><i>Spring Branch</i></label>
+              <label class="camp" for="t13"><b>West Houston Institute</b><i>West Houston</i></label>
+              <div class="cg">HCC Southeast College</div>
+              <label class="camp" for="t14"><b>Eastside Campus</b><i>Southeast Houston</i></label>
+              <label class="camp" for="t15"><b>Felix Fraga Academic Campus</b><i>Southeast Houston</i></label>
+              <div class="cg">HCC Southwest College</div>
+              <label class="camp" for="t16"><b>Brays Oaks Campus</b><i>Southwest Houston</i></label>
+              <label class="camp" for="t17"><b>Missouri City Campus</b><i>Missouri City</i></label>
+              <label class="camp" for="t18"><b>Stafford Campus</b><i>Stafford</i></label>
+              <label class="camp" for="t19"><b>West Loop Campus</b><i>Near Galleria / Bellaire</i></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="same">Pick two different campuses — the bus has to go somewhere.</p>
+
+            <h3 class="panel-h"><span class="step">2</span>Departure</h3>
+            <div class="field">
+              <span class="lab">Date</span>
+              <div class="dates">
+                <div class="dd dd-day" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Day">
+                  <span class="dd-cur swapbox">
+                    <b class="dy1">1</b>
+                    <b class="dy2">2</b>
+                    <b class="dy3">3</b>
+                    <b class="dy4">4</b>
+                    <b class="dy5">5</b>
+                    <b class="dy6">6</b>
+                    <b class="dy7">7</b>
+                    <b class="dy8">8</b>
+                    <b class="dy9">9</b>
+                    <b class="dy10">10</b>
+                    <b class="dy11">11</b>
+                    <b class="dy12">12</b>
+                    <b class="dy13">13</b>
+                    <b class="dy14">14</b>
+                    <b class="dy15">15</b>
+                    <b class="dy16">16</b>
+                    <b class="dy17">17</b>
+                    <b class="dy18">18</b>
+                    <b class="dy19">19</b>
+                    <b class="dy20">20</b>
+                    <b class="dy21">21</b>
+                    <b class="dy22">22</b>
+                    <b class="dy23">23</b>
+                    <b class="dy24">24</b>
+                    <b class="dy25">25</b>
+                    <b class="dy26">26</b>
+                    <b class="dy27">27</b>
+                    <b class="dy28">28</b>
+                    <b class="dy29">29</b>
+                    <b class="dy30">30</b>
+                    <b class="dy31">31</b>
+                  </span>
+                  <svg class="dd-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                  <div class="dd-panel dd-narrow">
+                    <label class="dd-opt" for="dy1">1</label>
+                    <label class="dd-opt" for="dy2">2</label>
+                    <label class="dd-opt" for="dy3">3</label>
+                    <label class="dd-opt" for="dy4">4</label>
+                    <label class="dd-opt" for="dy5">5</label>
+                    <label class="dd-opt" for="dy6">6</label>
+                    <label class="dd-opt" for="dy7">7</label>
+                    <label class="dd-opt" for="dy8">8</label>
+                    <label class="dd-opt" for="dy9">9</label>
+                    <label class="dd-opt" for="dy10">10</label>
+                    <label class="dd-opt" for="dy11">11</label>
+                    <label class="dd-opt" for="dy12">12</label>
+                    <label class="dd-opt" for="dy13">13</label>
+                    <label class="dd-opt" for="dy14">14</label>
+                    <label class="dd-opt" for="dy15">15</label>
+                    <label class="dd-opt" for="dy16">16</label>
+                    <label class="dd-opt" for="dy17">17</label>
+                    <label class="dd-opt" for="dy18">18</label>
+                    <label class="dd-opt" for="dy19">19</label>
+                    <label class="dd-opt" for="dy20">20</label>
+                    <label class="dd-opt" for="dy21">21</label>
+                    <label class="dd-opt" for="dy22">22</label>
+                    <label class="dd-opt" for="dy23">23</label>
+                    <label class="dd-opt" for="dy24">24</label>
+                    <label class="dd-opt" for="dy25">25</label>
+                    <label class="dd-opt" for="dy26">26</label>
+                    <label class="dd-opt" for="dy27">27</label>
+                    <label class="dd-opt" for="dy28">28</label>
+                    <label class="dd-opt" for="dy29">29</label>
+                    <label class="dd-opt" for="dy30">30</label>
+                    <label class="dd-opt" for="dy31">31</label>
+                  </div>
+                </div>
+                <div class="dd dd-mon" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Month">
+                  <span class="dd-cur swapbox">
+                    <b class="mn0">Jan</b>
+                    <b class="mn1">Feb</b>
+                    <b class="mn2">Mar</b>
+                    <b class="mn3">Apr</b>
+                    <b class="mn4">May</b>
+                    <b class="mn5">Jun</b>
+                    <b class="mn6">Jul</b>
+                    <b class="mn7">Aug</b>
+                    <b class="mn8">Sep</b>
+                    <b class="mn9">Oct</b>
+                    <b class="mn10">Nov</b>
+                    <b class="mn11">Dec</b>
+                  </span>
+                  <svg class="dd-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                  <div class="dd-panel dd-narrow">
+                    <label class="dd-opt" for="mn0">Jan</label>
+                    <label class="dd-opt" for="mn1">Feb</label>
+                    <label class="dd-opt" for="mn2">Mar</label>
+                    <label class="dd-opt" for="mn3">Apr</label>
+                    <label class="dd-opt" for="mn4">May</label>
+                    <label class="dd-opt" for="mn5">Jun</label>
+                    <label class="dd-opt" for="mn6">Jul</label>
+                    <label class="dd-opt" for="mn7">Aug</label>
+                    <label class="dd-opt" for="mn8">Sep</label>
+                    <label class="dd-opt" for="mn9">Oct</label>
+                    <label class="dd-opt" for="mn10">Nov</label>
+                    <label class="dd-opt" for="mn11">Dec</label>
+                  </div>
+                </div>
+                <div class="dd dd-yr" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Year">
+                  <span class="dd-cur swapbox">
+                    <b class="yr0">2026</b>
+                    <b class="yr1">2027</b>
+                  </span>
+                  <svg class="dd-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                  <div class="dd-panel dd-narrow">
+                    <label class="dd-opt" for="yr0">2026</label>
+                    <label class="dd-opt" for="yr1">2027</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <span class="lab">Time <i>Central Time &middot; one bus every hour</i></span>
+              <div class="dd dd-time" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Departure time">
+                  <span class="dd-cur swapbox">
+                    <b class="tm0">6:00 AM CT</b>
+                    <b class="tm1">7:00 AM CT</b>
+                    <b class="tm2">8:00 AM CT</b>
+                    <b class="tm3">9:00 AM CT</b>
+                    <b class="tm4">10:00 AM CT</b>
+                    <b class="tm5">11:00 AM CT</b>
+                    <b class="tm6">12:00 PM CT</b>
+                    <b class="tm7">1:00 PM CT</b>
+                    <b class="tm8">2:00 PM CT</b>
+                    <b class="tm9">3:00 PM CT</b>
+                    <b class="tm10">4:00 PM CT</b>
+                    <b class="tm11">5:00 PM CT</b>
+                    <b class="tm12">6:00 PM CT</b>
+                    <b class="tm13">7:00 PM CT</b>
+                    <b class="tm14">8:00 PM CT</b>
+                    <b class="tm15">9:00 PM CT</b>
+                    <b class="tm16">10:00 PM CT</b>
+                  </span>
+                  <svg class="dd-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                  <div class="dd-panel dd-time">
+              <label class="dd-opt" for="h0">6:00 AM</label>
+              <label class="dd-opt" for="h1">7:00 AM</label>
+              <label class="dd-opt" for="h2">8:00 AM</label>
+              <label class="dd-opt" for="h3">9:00 AM</label>
+              <label class="dd-opt" for="h4">10:00 AM</label>
+              <label class="dd-opt" for="h5">11:00 AM</label>
+              <label class="dd-opt" for="h6">12:00 PM</label>
+              <label class="dd-opt" for="h7">1:00 PM</label>
+              <label class="dd-opt" for="h8">2:00 PM</label>
+              <label class="dd-opt" for="h9">3:00 PM</label>
+              <label class="dd-opt" for="h10">4:00 PM</label>
+              <label class="dd-opt" for="h11">5:00 PM</label>
+              <label class="dd-opt" for="h12">6:00 PM</label>
+              <label class="dd-opt" for="h13">7:00 PM</label>
+              <label class="dd-opt" for="h14">8:00 PM</label>
+              <label class="dd-opt" for="h15">9:00 PM</label>
+              <label class="dd-opt" for="h16">10:00 PM</label>
+                  </div>
+                </div>
+            </div>
+
+            <h3 class="panel-h"><span class="step">3</span>Ticket type</h3>
+            <div class="fares">
+          <label class="fare" for="tt-staff">
+            <span class="fare-name">Staff</span>
+            <span class="fare-price"><i>$</i>3</span>
+            <span class="fare-unit">per seat</span>
+          </label>
+          <label class="fare" for="tt-student">
+            <span class="fare-name">Student</span>
+            <span class="fare-price"><i>$</i>5</span>
+            <span class="fare-unit">per seat</span>
+          </label>
+          <label class="fare" for="tt-other">
+            <span class="fare-name">Others</span>
+            <span class="fare-price"><i>$</i>7</span>
+            <span class="fare-unit">per seat</span>
+          </label>
+            </div>
+
+            <h3 class="panel-h"><span class="step">4</span>Seats <i>maximum 25</i></h3>
+            <div class="qpad">
+            <label class="qbtn" for="q-1">1</label>
+            <label class="qbtn" for="q-2">2</label>
+            <label class="qbtn" for="q-3">3</label>
+            <label class="qbtn" for="q-4">4</label>
+            <label class="qbtn" for="q-5">5</label>
+            <label class="qbtn" for="q-6">6</label>
+            <label class="qbtn" for="q-7">7</label>
+            <label class="qbtn" for="q-8">8</label>
+            <label class="qbtn" for="q-9">9</label>
+            <label class="qbtn" for="q-10">10</label>
+            <label class="qbtn" for="q-11">11</label>
+            <label class="qbtn" for="q-12">12</label>
+            <label class="qbtn" for="q-13">13</label>
+            <label class="qbtn" for="q-14">14</label>
+            <label class="qbtn" for="q-15">15</label>
+            <label class="qbtn" for="q-16">16</label>
+            <label class="qbtn" for="q-17">17</label>
+            <label class="qbtn" for="q-18">18</label>
+            <label class="qbtn" for="q-19">19</label>
+            <label class="qbtn" for="q-20">20</label>
+            <label class="qbtn" for="q-21">21</label>
+            <label class="qbtn" for="q-22">22</label>
+            <label class="qbtn" for="q-23">23</label>
+            <label class="qbtn" for="q-24">24</label>
+            <label class="qbtn" for="q-25">25</label>
+            </div>
+          </div>
+
+          <aside class="ticket" aria-label="Ticket preview">
+            <div class="tk">
+              <div class="tk-top">
+                <span class="tk-logo" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="16" rx="4"/><rect x="7" y="9" width="7" height="6" rx="1.5" class="w"/><rect x="18" y="9" width="7" height="6" rx="1.5" class="w"/><circle cx="10" cy="24" r="3"/><circle cx="22" cy="24" r="3"/></svg></span>
+                <span class="tk-brand">HCC Metro Bus</span>
+                <span class="tk-class"><b>Boarding pass</b></span>
+              </div>
+
+              <div class="tk-route">
+                <div class="tk-end">
+                  <em class="tk-lab">FROM</em>
+                  <span class="tk-val swapbox">
+                  <b class="fl0">Central Campus</b>
+                  <b class="fl1">South Campus</b>
+                  <b class="fl2">Coleman Campus</b>
+                  <b class="fl3">Coleman College at Midtown</b>
+                  <b class="fl4">Acres Homes Campus</b>
+                  <b class="fl5">Automotive Technology Training Center</b>
+                  <b class="fl6">Northeast Campus</b>
+                  <b class="fl7">North Forest Campus</b>
+                  <b class="fl8">Northline Campus</b>
+                  <b class="fl9">Alief Bissonnet Campus</b>
+                  <b class="fl10">Alief Hayes Campus</b>
+                  <b class="fl11">Katy Campus</b>
+                  <b class="fl12">Spring Branch Campus</b>
+                  <b class="fl13">West Houston Institute</b>
+                  <b class="fl14">Eastside Campus</b>
+                  <b class="fl15">Felix Fraga Academic Campus</b>
+                  <b class="fl16">Brays Oaks Campus</b>
+                  <b class="fl17">Missouri City Campus</b>
+                  <b class="fl18">Stafford Campus</b>
+                  <b class="fl19">West Loop Campus</b>
+                  </span>
+                </div>
+                <div class="tk-mid" aria-hidden="true"><i></i><svg viewBox="0 0 24 24"><path d="M3 12h15M14 7l5 5-5 5"/></svg><i></i></div>
+                <div class="tk-end tk-r">
+                  <em class="tk-lab">TO</em>
+                  <span class="tk-val swapbox">
+                  <b class="tl0">Central Campus</b>
+                  <b class="tl1">South Campus</b>
+                  <b class="tl2">Coleman Campus</b>
+                  <b class="tl3">Coleman College at Midtown</b>
+                  <b class="tl4">Acres Homes Campus</b>
+                  <b class="tl5">Automotive Technology Training Center</b>
+                  <b class="tl6">Northeast Campus</b>
+                  <b class="tl7">North Forest Campus</b>
+                  <b class="tl8">Northline Campus</b>
+                  <b class="tl9">Alief Bissonnet Campus</b>
+                  <b class="tl10">Alief Hayes Campus</b>
+                  <b class="tl11">Katy Campus</b>
+                  <b class="tl12">Spring Branch Campus</b>
+                  <b class="tl13">West Houston Institute</b>
+                  <b class="tl14">Eastside Campus</b>
+                  <b class="tl15">Felix Fraga Academic Campus</b>
+                  <b class="tl16">Brays Oaks Campus</b>
+                  <b class="tl17">Missouri City Campus</b>
+                  <b class="tl18">Stafford Campus</b>
+                  <b class="tl19">West Loop Campus</b>
+                  </span>
+                </div>
+              </div>
+
+              <dl class="tk-rows">
+                <div><dt>Departure</dt><dd class="swapbox">
+<span class="swapbox">
+                  <b class="dy1">1</b>
+                  <b class="dy2">2</b>
+                  <b class="dy3">3</b>
+                  <b class="dy4">4</b>
+                  <b class="dy5">5</b>
+                  <b class="dy6">6</b>
+                  <b class="dy7">7</b>
+                  <b class="dy8">8</b>
+                  <b class="dy9">9</b>
+                  <b class="dy10">10</b>
+                  <b class="dy11">11</b>
+                  <b class="dy12">12</b>
+                  <b class="dy13">13</b>
+                  <b class="dy14">14</b>
+                  <b class="dy15">15</b>
+                  <b class="dy16">16</b>
+                  <b class="dy17">17</b>
+                  <b class="dy18">18</b>
+                  <b class="dy19">19</b>
+                  <b class="dy20">20</b>
+                  <b class="dy21">21</b>
+                  <b class="dy22">22</b>
+                  <b class="dy23">23</b>
+                  <b class="dy24">24</b>
+                  <b class="dy25">25</b>
+                  <b class="dy26">26</b>
+                  <b class="dy27">27</b>
+                  <b class="dy28">28</b>
+                  <b class="dy29">29</b>
+                  <b class="dy30">30</b>
+                  <b class="dy31">31</b>
+</span>
+<span class="swapbox">
+                  <b class="mn0">Jan</b>
+                  <b class="mn1">Feb</b>
+                  <b class="mn2">Mar</b>
+                  <b class="mn3">Apr</b>
+                  <b class="mn4">May</b>
+                  <b class="mn5">Jun</b>
+                  <b class="mn6">Jul</b>
+                  <b class="mn7">Aug</b>
+                  <b class="mn8">Sep</b>
+                  <b class="mn9">Oct</b>
+                  <b class="mn10">Nov</b>
+                  <b class="mn11">Dec</b>
+</span>
+<span class="swapbox">
+                  <b class="yr0">2026</b>
+                  <b class="yr1">2027</b>
+</span>
+<span class="dsep">&middot;</span>
+<span class="swapbox">
+                  <b class="tm0">6:00 AM CT</b>
+                  <b class="tm1">7:00 AM CT</b>
+                  <b class="tm2">8:00 AM CT</b>
+                  <b class="tm3">9:00 AM CT</b>
+                  <b class="tm4">10:00 AM CT</b>
+                  <b class="tm5">11:00 AM CT</b>
+                  <b class="tm6">12:00 PM CT</b>
+                  <b class="tm7">1:00 PM CT</b>
+                  <b class="tm8">2:00 PM CT</b>
+                  <b class="tm9">3:00 PM CT</b>
+                  <b class="tm10">4:00 PM CT</b>
+                  <b class="tm11">5:00 PM CT</b>
+                  <b class="tm12">6:00 PM CT</b>
+                  <b class="tm13">7:00 PM CT</b>
+                  <b class="tm14">8:00 PM CT</b>
+                  <b class="tm15">9:00 PM CT</b>
+                  <b class="tm16">10:00 PM CT</b>
+                </span>
+</dd></div>
+                <div><dt>Ticket type</dt><dd class="swapbox">
+                  <b class="n-staff">Staff</b>
+                  <b class="n-student">Student</b>
+                  <b class="n-other">Others</b>
+                </dd></div>
+                <div><dt>Price per seat</dt><dd class="swapbox">
+                  <b class="e-staff">$3.00</b>
+                  <b class="e-student">$5.00</b>
+                  <b class="e-other">$7.00</b>
+                </dd></div>
+                <div><dt>Seats</dt><dd>
+                  <span class="swapbox">
+                  <b class="c-1">1</b>
+                  <b class="c-2">2</b>
+                  <b class="c-3">3</b>
+                  <b class="c-4">4</b>
+                  <b class="c-5">5</b>
+                  <b class="c-6">6</b>
+                  <b class="c-7">7</b>
+                  <b class="c-8">8</b>
+                  <b class="c-9">9</b>
+                  <b class="c-10">10</b>
+                  <b class="c-11">11</b>
+                  <b class="c-12">12</b>
+                  <b class="c-13">13</b>
+                  <b class="c-14">14</b>
+                  <b class="c-15">15</b>
+                  <b class="c-16">16</b>
+                  <b class="c-17">17</b>
+                  <b class="c-18">18</b>
+                  <b class="c-19">19</b>
+                  <b class="c-20">20</b>
+                  <b class="c-21">21</b>
+                  <b class="c-22">22</b>
+                  <b class="c-23">23</b>
+                  <b class="c-24">24</b>
+                  <b class="c-25">25</b>
+                  </span>
+                  <span class="swapbox muted">
+                  <b class="c-1">seat</b>
+                  <b class="c-2">seats</b>
+                  <b class="c-3">seats</b>
+                  <b class="c-4">seats</b>
+                  <b class="c-5">seats</b>
+                  <b class="c-6">seats</b>
+                  <b class="c-7">seats</b>
+                  <b class="c-8">seats</b>
+                  <b class="c-9">seats</b>
+                  <b class="c-10">seats</b>
+                  <b class="c-11">seats</b>
+                  <b class="c-12">seats</b>
+                  <b class="c-13">seats</b>
+                  <b class="c-14">seats</b>
+                  <b class="c-15">seats</b>
+                  <b class="c-16">seats</b>
+                  <b class="c-17">seats</b>
+                  <b class="c-18">seats</b>
+                  <b class="c-19">seats</b>
+                  <b class="c-20">seats</b>
+                  <b class="c-21">seats</b>
+                  <b class="c-22">seats</b>
+                  <b class="c-23">seats</b>
+                  <b class="c-24">seats</b>
+                  <b class="c-25">seats</b>
+                  </span>
+                </dd></div>
+              </dl>
+
+              <div class="tk-rip" aria-hidden="true"><span></span></div>
+
+              <div class="tk-total">
+                <span>Total price</span>
+                <strong class="swapbox total">
+                  <b class="v-staff-1">$3.00</b>
+                  <b class="v-staff-2">$6.00</b>
+                  <b class="v-staff-3">$9.00</b>
+                  <b class="v-staff-4">$12.00</b>
+                  <b class="v-staff-5">$15.00</b>
+                  <b class="v-staff-6">$18.00</b>
+                  <b class="v-staff-7">$21.00</b>
+                  <b class="v-staff-8">$24.00</b>
+                  <b class="v-staff-9">$27.00</b>
+                  <b class="v-staff-10">$30.00</b>
+                  <b class="v-staff-11">$33.00</b>
+                  <b class="v-staff-12">$36.00</b>
+                  <b class="v-staff-13">$39.00</b>
+                  <b class="v-staff-14">$42.00</b>
+                  <b class="v-staff-15">$45.00</b>
+                  <b class="v-staff-16">$48.00</b>
+                  <b class="v-staff-17">$51.00</b>
+                  <b class="v-staff-18">$54.00</b>
+                  <b class="v-staff-19">$57.00</b>
+                  <b class="v-staff-20">$60.00</b>
+                  <b class="v-staff-21">$63.00</b>
+                  <b class="v-staff-22">$66.00</b>
+                  <b class="v-staff-23">$69.00</b>
+                  <b class="v-staff-24">$72.00</b>
+                  <b class="v-staff-25">$75.00</b>
+                  <b class="v-student-1">$5.00</b>
+                  <b class="v-student-2">$10.00</b>
+                  <b class="v-student-3">$15.00</b>
+                  <b class="v-student-4">$20.00</b>
+                  <b class="v-student-5">$25.00</b>
+                  <b class="v-student-6">$30.00</b>
+                  <b class="v-student-7">$35.00</b>
+                  <b class="v-student-8">$40.00</b>
+                  <b class="v-student-9">$45.00</b>
+                  <b class="v-student-10">$50.00</b>
+                  <b class="v-student-11">$55.00</b>
+                  <b class="v-student-12">$60.00</b>
+                  <b class="v-student-13">$65.00</b>
+                  <b class="v-student-14">$70.00</b>
+                  <b class="v-student-15">$75.00</b>
+                  <b class="v-student-16">$80.00</b>
+                  <b class="v-student-17">$85.00</b>
+                  <b class="v-student-18">$90.00</b>
+                  <b class="v-student-19">$95.00</b>
+                  <b class="v-student-20">$100.00</b>
+                  <b class="v-student-21">$105.00</b>
+                  <b class="v-student-22">$110.00</b>
+                  <b class="v-student-23">$115.00</b>
+                  <b class="v-student-24">$120.00</b>
+                  <b class="v-student-25">$125.00</b>
+                  <b class="v-other-1">$7.00</b>
+                  <b class="v-other-2">$14.00</b>
+                  <b class="v-other-3">$21.00</b>
+                  <b class="v-other-4">$28.00</b>
+                  <b class="v-other-5">$35.00</b>
+                  <b class="v-other-6">$42.00</b>
+                  <b class="v-other-7">$49.00</b>
+                  <b class="v-other-8">$56.00</b>
+                  <b class="v-other-9">$63.00</b>
+                  <b class="v-other-10">$70.00</b>
+                  <b class="v-other-11">$77.00</b>
+                  <b class="v-other-12">$84.00</b>
+                  <b class="v-other-13">$91.00</b>
+                  <b class="v-other-14">$98.00</b>
+                  <b class="v-other-15">$105.00</b>
+                  <b class="v-other-16">$112.00</b>
+                  <b class="v-other-17">$119.00</b>
+                  <b class="v-other-18">$126.00</b>
+                  <b class="v-other-19">$133.00</b>
+                  <b class="v-other-20">$140.00</b>
+                  <b class="v-other-21">$147.00</b>
+                  <b class="v-other-22">$154.00</b>
+                  <b class="v-other-23">$161.00</b>
+                  <b class="v-other-24">$168.00</b>
+                  <b class="v-other-25">$175.00</b>
+                </strong>
+              </div>
+
+              <p class="tk-warn">Departure and arrival are the same campus.</p>
+              <label class="btn btn-wide" for="co-form">Purchase ticket</label>
+              <p class="tk-note">Seats are held for 10 minutes after purchase starts. Show this pass and your HCC ID when boarding.</p>
+            </div>
+          </aside>
+
+
+          <div class="co" role="dialog" aria-modal="true" aria-label="Checkout">
+            <label class="co-scrim" for="co-closed" aria-label="Close checkout"></label>
+
+            <div class="co-box">
+              <label class="co-x" for="co-closed" aria-label="Close">&times;</label>
+
+              <div class="co-pay">
+                <section class="co-col co-form">
+                  <h3>Your details</h3>
+                  <p class="co-f"><label for="co-email">Email</label><input id="co-email" type="email" placeholder="you@student.hccs.edu" autocomplete="email"></p>
+                  <p class="co-f"><label for="co-tel">Phone</label><input id="co-tel" type="tel" placeholder="(713) 555-0134" autocomplete="tel"></p>
+                  <p class="co-f"><label for="co-sid">Student ID</label><input id="co-sid" type="text" placeholder="W01234567"></p>
+                  <h3 class="co-h2">Card</h3>
+                  <p class="co-f"><label for="co-card">Card number</label><input id="co-card" type="text" inputmode="numeric" placeholder="4242 4242 4242 4242" autocomplete="cc-number"></p>
+                  <div class="co-two">
+                    <p class="co-f"><label for="co-exp">Expiry</label><input id="co-exp" type="text" placeholder="MM / YY" autocomplete="cc-exp"></p>
+                    <p class="co-f"><label for="co-cvc">CVC</label><input id="co-cvc" type="text" inputmode="numeric" placeholder="123" autocomplete="cc-csc"></p>
+                  </div>
+                </section>
+
+                <div class="co-col co-mid">
+                  <span class="co-amount swapbox">
+                    <b class="v-staff-1">$3.00</b>
+                    <b class="v-staff-2">$6.00</b>
+                    <b class="v-staff-3">$9.00</b>
+                    <b class="v-staff-4">$12.00</b>
+                    <b class="v-staff-5">$15.00</b>
+                    <b class="v-staff-6">$18.00</b>
+                    <b class="v-staff-7">$21.00</b>
+                    <b class="v-staff-8">$24.00</b>
+                    <b class="v-staff-9">$27.00</b>
+                    <b class="v-staff-10">$30.00</b>
+                    <b class="v-staff-11">$33.00</b>
+                    <b class="v-staff-12">$36.00</b>
+                    <b class="v-staff-13">$39.00</b>
+                    <b class="v-staff-14">$42.00</b>
+                    <b class="v-staff-15">$45.00</b>
+                    <b class="v-staff-16">$48.00</b>
+                    <b class="v-staff-17">$51.00</b>
+                    <b class="v-staff-18">$54.00</b>
+                    <b class="v-staff-19">$57.00</b>
+                    <b class="v-staff-20">$60.00</b>
+                    <b class="v-staff-21">$63.00</b>
+                    <b class="v-staff-22">$66.00</b>
+                    <b class="v-staff-23">$69.00</b>
+                    <b class="v-staff-24">$72.00</b>
+                    <b class="v-staff-25">$75.00</b>
+                    <b class="v-student-1">$5.00</b>
+                    <b class="v-student-2">$10.00</b>
+                    <b class="v-student-3">$15.00</b>
+                    <b class="v-student-4">$20.00</b>
+                    <b class="v-student-5">$25.00</b>
+                    <b class="v-student-6">$30.00</b>
+                    <b class="v-student-7">$35.00</b>
+                    <b class="v-student-8">$40.00</b>
+                    <b class="v-student-9">$45.00</b>
+                    <b class="v-student-10">$50.00</b>
+                    <b class="v-student-11">$55.00</b>
+                    <b class="v-student-12">$60.00</b>
+                    <b class="v-student-13">$65.00</b>
+                    <b class="v-student-14">$70.00</b>
+                    <b class="v-student-15">$75.00</b>
+                    <b class="v-student-16">$80.00</b>
+                    <b class="v-student-17">$85.00</b>
+                    <b class="v-student-18">$90.00</b>
+                    <b class="v-student-19">$95.00</b>
+                    <b class="v-student-20">$100.00</b>
+                    <b class="v-student-21">$105.00</b>
+                    <b class="v-student-22">$110.00</b>
+                    <b class="v-student-23">$115.00</b>
+                    <b class="v-student-24">$120.00</b>
+                    <b class="v-student-25">$125.00</b>
+                    <b class="v-other-1">$7.00</b>
+                    <b class="v-other-2">$14.00</b>
+                    <b class="v-other-3">$21.00</b>
+                    <b class="v-other-4">$28.00</b>
+                    <b class="v-other-5">$35.00</b>
+                    <b class="v-other-6">$42.00</b>
+                    <b class="v-other-7">$49.00</b>
+                    <b class="v-other-8">$56.00</b>
+                    <b class="v-other-9">$63.00</b>
+                    <b class="v-other-10">$70.00</b>
+                    <b class="v-other-11">$77.00</b>
+                    <b class="v-other-12">$84.00</b>
+                    <b class="v-other-13">$91.00</b>
+                    <b class="v-other-14">$98.00</b>
+                    <b class="v-other-15">$105.00</b>
+                    <b class="v-other-16">$112.00</b>
+                    <b class="v-other-17">$119.00</b>
+                    <b class="v-other-18">$126.00</b>
+                    <b class="v-other-19">$133.00</b>
+                    <b class="v-other-20">$140.00</b>
+                    <b class="v-other-21">$147.00</b>
+                    <b class="v-other-22">$154.00</b>
+                    <b class="v-other-23">$161.00</b>
+                    <b class="v-other-24">$168.00</b>
+                    <b class="v-other-25">$175.00</b>
+                  </span>
+                  <label class="co-ok" for="co-paid">Pay now</label>
+                </div>
+
+                <section class="co-col co-trip">
+                  <h3>Your trip</h3>
+                  <dl class="co-rows">
+                    <div><dt>From</dt><dd class="swapbox">
+                      <b class="fl0">Central Campus</b>
+                      <b class="fl1">South Campus</b>
+                      <b class="fl2">Coleman Campus</b>
+                      <b class="fl3">Coleman College at Midtown</b>
+                      <b class="fl4">Acres Homes Campus</b>
+                      <b class="fl5">Automotive Technology Training Center</b>
+                      <b class="fl6">Northeast Campus</b>
+                      <b class="fl7">North Forest Campus</b>
+                      <b class="fl8">Northline Campus</b>
+                      <b class="fl9">Alief Bissonnet Campus</b>
+                      <b class="fl10">Alief Hayes Campus</b>
+                      <b class="fl11">Katy Campus</b>
+                      <b class="fl12">Spring Branch Campus</b>
+                      <b class="fl13">West Houston Institute</b>
+                      <b class="fl14">Eastside Campus</b>
+                      <b class="fl15">Felix Fraga Academic Campus</b>
+                      <b class="fl16">Brays Oaks Campus</b>
+                      <b class="fl17">Missouri City Campus</b>
+                      <b class="fl18">Stafford Campus</b>
+                      <b class="fl19">West Loop Campus</b>
+                    </dd></div>
+                    <div><dt>To</dt><dd class="swapbox">
+                      <b class="tl0">Central Campus</b>
+                      <b class="tl1">South Campus</b>
+                      <b class="tl2">Coleman Campus</b>
+                      <b class="tl3">Coleman College at Midtown</b>
+                      <b class="tl4">Acres Homes Campus</b>
+                      <b class="tl5">Automotive Technology Training Center</b>
+                      <b class="tl6">Northeast Campus</b>
+                      <b class="tl7">North Forest Campus</b>
+                      <b class="tl8">Northline Campus</b>
+                      <b class="tl9">Alief Bissonnet Campus</b>
+                      <b class="tl10">Alief Hayes Campus</b>
+                      <b class="tl11">Katy Campus</b>
+                      <b class="tl12">Spring Branch Campus</b>
+                      <b class="tl13">West Houston Institute</b>
+                      <b class="tl14">Eastside Campus</b>
+                      <b class="tl15">Felix Fraga Academic Campus</b>
+                      <b class="tl16">Brays Oaks Campus</b>
+                      <b class="tl17">Missouri City Campus</b>
+                      <b class="tl18">Stafford Campus</b>
+                      <b class="tl19">West Loop Campus</b>
+                    </dd></div>
+                    <div><dt>Time</dt><dd class="swapbox">
+<span class="swapbox">
+                    <b class="dy1">1</b>
+                    <b class="dy2">2</b>
+                    <b class="dy3">3</b>
+                    <b class="dy4">4</b>
+                    <b class="dy5">5</b>
+                    <b class="dy6">6</b>
+                    <b class="dy7">7</b>
+                    <b class="dy8">8</b>
+                    <b class="dy9">9</b>
+                    <b class="dy10">10</b>
+                    <b class="dy11">11</b>
+                    <b class="dy12">12</b>
+                    <b class="dy13">13</b>
+                    <b class="dy14">14</b>
+                    <b class="dy15">15</b>
+                    <b class="dy16">16</b>
+                    <b class="dy17">17</b>
+                    <b class="dy18">18</b>
+                    <b class="dy19">19</b>
+                    <b class="dy20">20</b>
+                    <b class="dy21">21</b>
+                    <b class="dy22">22</b>
+                    <b class="dy23">23</b>
+                    <b class="dy24">24</b>
+                    <b class="dy25">25</b>
+                    <b class="dy26">26</b>
+                    <b class="dy27">27</b>
+                    <b class="dy28">28</b>
+                    <b class="dy29">29</b>
+                    <b class="dy30">30</b>
+                    <b class="dy31">31</b>
+</span>
+<span class="swapbox">
+                    <b class="mn0">Jan</b>
+                    <b class="mn1">Feb</b>
+                    <b class="mn2">Mar</b>
+                    <b class="mn3">Apr</b>
+                    <b class="mn4">May</b>
+                    <b class="mn5">Jun</b>
+                    <b class="mn6">Jul</b>
+                    <b class="mn7">Aug</b>
+                    <b class="mn8">Sep</b>
+                    <b class="mn9">Oct</b>
+                    <b class="mn10">Nov</b>
+                    <b class="mn11">Dec</b>
+</span>
+<span class="swapbox">
+                    <b class="yr0">2026</b>
+                    <b class="yr1">2027</b>
+</span>
+<span class="dsep">&middot;</span>
+<span class="swapbox">
+                      <b class="tm0">6:00 AM CT</b>
+                      <b class="tm1">7:00 AM CT</b>
+                      <b class="tm2">8:00 AM CT</b>
+                      <b class="tm3">9:00 AM CT</b>
+                      <b class="tm4">10:00 AM CT</b>
+                      <b class="tm5">11:00 AM CT</b>
+                      <b class="tm6">12:00 PM CT</b>
+                      <b class="tm7">1:00 PM CT</b>
+                      <b class="tm8">2:00 PM CT</b>
+                      <b class="tm9">3:00 PM CT</b>
+                      <b class="tm10">4:00 PM CT</b>
+                      <b class="tm11">5:00 PM CT</b>
+                      <b class="tm12">6:00 PM CT</b>
+                      <b class="tm13">7:00 PM CT</b>
+                      <b class="tm14">8:00 PM CT</b>
+                      <b class="tm15">9:00 PM CT</b>
+                      <b class="tm16">10:00 PM CT</b>
+                    </span>
+</dd></div>
+                    <div><dt>Seats</dt><dd class="swapbox">
+                      <b class="c-1">1</b>
+                      <b class="c-2">2</b>
+                      <b class="c-3">3</b>
+                      <b class="c-4">4</b>
+                      <b class="c-5">5</b>
+                      <b class="c-6">6</b>
+                      <b class="c-7">7</b>
+                      <b class="c-8">8</b>
+                      <b class="c-9">9</b>
+                      <b class="c-10">10</b>
+                      <b class="c-11">11</b>
+                      <b class="c-12">12</b>
+                      <b class="c-13">13</b>
+                      <b class="c-14">14</b>
+                      <b class="c-15">15</b>
+                      <b class="c-16">16</b>
+                      <b class="c-17">17</b>
+                      <b class="c-18">18</b>
+                      <b class="c-19">19</b>
+                      <b class="c-20">20</b>
+                      <b class="c-21">21</b>
+                      <b class="c-22">22</b>
+                      <b class="c-23">23</b>
+                      <b class="c-24">24</b>
+                      <b class="c-25">25</b>
+                    </dd></div>
+                  </dl>
+                </section>
+              </div>
+
+              <div class="co-done">
+                <span class="co-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12.5l5.5 5.5L20 7"/></svg></span>
+                <p class="co-paid-h">Paid</p>
+                <p class="co-paid-s">Show this code to the driver when you board.</p>
+                <div class="co-qr"><svg class="qr" viewBox="0 0 21 21" shape-rendering="crispEdges" role="img" aria-label="Boarding QR code"><rect width="21" height="21" fill="#fff"/><path d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM10 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM15 0h1v1h-1zM16 0h1v1h-1zM17 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM9 1h1v1h-1zM10 1h1v1h-1zM12 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM17 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM12 3h1v1h-1zM14 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM11 4h1v1h-1zM14 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM20 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM15 6h1v1h-1zM16 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM8 7h1v1h-1zM9 7h1v1h-1zM1 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM19 8h1v1h-1zM20 8h1v1h-1zM0 9h1v1h-1zM2 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM7 9h1v1h-1zM11 9h1v1h-1zM16 9h1v1h-1zM18 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM12 10h1v1h-1zM15 10h1v1h-1zM17 10h1v1h-1zM19 10h1v1h-1zM0 11h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM8 11h1v1h-1zM10 11h1v1h-1zM12 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM18 11h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM10 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM15 12h1v1h-1zM18 12h1v1h-1zM20 12h1v1h-1zM8 13h1v1h-1zM9 13h1v1h-1zM10 13h1v1h-1zM11 13h1v1h-1zM16 13h1v1h-1zM18 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM2 14h1v1h-1zM3 14h1v1h-1zM4 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM10 14h1v1h-1zM12 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM17 14h1v1h-1zM19 14h1v1h-1zM0 15h1v1h-1zM6 15h1v1h-1zM8 15h1v1h-1zM12 15h1v1h-1zM17 15h1v1h-1zM18 15h1v1h-1zM19 15h1v1h-1zM20 15h1v1h-1zM0 16h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM6 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM13 16h1v1h-1zM14 16h1v1h-1zM16 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM20 16h1v1h-1zM0 17h1v1h-1zM2 17h1v1h-1zM3 17h1v1h-1zM4 17h1v1h-1zM6 17h1v1h-1zM8 17h1v1h-1zM9 17h1v1h-1zM11 17h1v1h-1zM13 17h1v1h-1zM15 17h1v1h-1zM16 17h1v1h-1zM17 17h1v1h-1zM0 18h1v1h-1zM2 18h1v1h-1zM3 18h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM9 18h1v1h-1zM10 18h1v1h-1zM12 18h1v1h-1zM14 18h1v1h-1zM15 18h1v1h-1zM17 18h1v1h-1zM18 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM8 19h1v1h-1zM10 19h1v1h-1zM11 19h1v1h-1zM12 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM17 19h1v1h-1zM18 19h1v1h-1zM0 20h1v1h-1zM1 20h1v1h-1zM2 20h1v1h-1zM3 20h1v1h-1zM4 20h1v1h-1zM5 20h1v1h-1zM6 20h1v1h-1zM9 20h1v1h-1zM10 20h1v1h-1zM11 20h1v1h-1zM14 20h1v1h-1zM15 20h1v1h-1zM18 20h1v1h-1zM19 20h1v1h-1z" fill="#0A2240"/></svg></div>
+                <p class="co-ref">HCCMB-2026-4821</p>
+                <dl class="co-rows co-rows-done">
+                  <div><dt>From</dt><dd class="swapbox">
+                      <b class="fl0">Central Campus</b>
+                      <b class="fl1">South Campus</b>
+                      <b class="fl2">Coleman Campus</b>
+                      <b class="fl3">Coleman College at Midtown</b>
+                      <b class="fl4">Acres Homes Campus</b>
+                      <b class="fl5">Automotive Technology Training Center</b>
+                      <b class="fl6">Northeast Campus</b>
+                      <b class="fl7">North Forest Campus</b>
+                      <b class="fl8">Northline Campus</b>
+                      <b class="fl9">Alief Bissonnet Campus</b>
+                      <b class="fl10">Alief Hayes Campus</b>
+                      <b class="fl11">Katy Campus</b>
+                      <b class="fl12">Spring Branch Campus</b>
+                      <b class="fl13">West Houston Institute</b>
+                      <b class="fl14">Eastside Campus</b>
+                      <b class="fl15">Felix Fraga Academic Campus</b>
+                      <b class="fl16">Brays Oaks Campus</b>
+                      <b class="fl17">Missouri City Campus</b>
+                      <b class="fl18">Stafford Campus</b>
+                      <b class="fl19">West Loop Campus</b>
+                  </dd></div>
+                  <div><dt>To</dt><dd class="swapbox">
+                      <b class="tl0">Central Campus</b>
+                      <b class="tl1">South Campus</b>
+                      <b class="tl2">Coleman Campus</b>
+                      <b class="tl3">Coleman College at Midtown</b>
+                      <b class="tl4">Acres Homes Campus</b>
+                      <b class="tl5">Automotive Technology Training Center</b>
+                      <b class="tl6">Northeast Campus</b>
+                      <b class="tl7">North Forest Campus</b>
+                      <b class="tl8">Northline Campus</b>
+                      <b class="tl9">Alief Bissonnet Campus</b>
+                      <b class="tl10">Alief Hayes Campus</b>
+                      <b class="tl11">Katy Campus</b>
+                      <b class="tl12">Spring Branch Campus</b>
+                      <b class="tl13">West Houston Institute</b>
+                      <b class="tl14">Eastside Campus</b>
+                      <b class="tl15">Felix Fraga Academic Campus</b>
+                      <b class="tl16">Brays Oaks Campus</b>
+                      <b class="tl17">Missouri City Campus</b>
+                      <b class="tl18">Stafford Campus</b>
+                      <b class="tl19">West Loop Campus</b>
+                  </dd></div>
+                  <div><dt>Time</dt><dd class="swapbox">
+<span class="swapbox">
+                    <b class="dy1">1</b>
+                    <b class="dy2">2</b>
+                    <b class="dy3">3</b>
+                    <b class="dy4">4</b>
+                    <b class="dy5">5</b>
+                    <b class="dy6">6</b>
+                    <b class="dy7">7</b>
+                    <b class="dy8">8</b>
+                    <b class="dy9">9</b>
+                    <b class="dy10">10</b>
+                    <b class="dy11">11</b>
+                    <b class="dy12">12</b>
+                    <b class="dy13">13</b>
+                    <b class="dy14">14</b>
+                    <b class="dy15">15</b>
+                    <b class="dy16">16</b>
+                    <b class="dy17">17</b>
+                    <b class="dy18">18</b>
+                    <b class="dy19">19</b>
+                    <b class="dy20">20</b>
+                    <b class="dy21">21</b>
+                    <b class="dy22">22</b>
+                    <b class="dy23">23</b>
+                    <b class="dy24">24</b>
+                    <b class="dy25">25</b>
+                    <b class="dy26">26</b>
+                    <b class="dy27">27</b>
+                    <b class="dy28">28</b>
+                    <b class="dy29">29</b>
+                    <b class="dy30">30</b>
+                    <b class="dy31">31</b>
+</span>
+<span class="swapbox">
+                    <b class="mn0">Jan</b>
+                    <b class="mn1">Feb</b>
+                    <b class="mn2">Mar</b>
+                    <b class="mn3">Apr</b>
+                    <b class="mn4">May</b>
+                    <b class="mn5">Jun</b>
+                    <b class="mn6">Jul</b>
+                    <b class="mn7">Aug</b>
+                    <b class="mn8">Sep</b>
+                    <b class="mn9">Oct</b>
+                    <b class="mn10">Nov</b>
+                    <b class="mn11">Dec</b>
+</span>
+<span class="swapbox">
+                    <b class="yr0">2026</b>
+                    <b class="yr1">2027</b>
+</span>
+<span class="dsep">&middot;</span>
+<span class="swapbox">
+                      <b class="tm0">6:00 AM CT</b>
+                      <b class="tm1">7:00 AM CT</b>
+                      <b class="tm2">8:00 AM CT</b>
+                      <b class="tm3">9:00 AM CT</b>
+                      <b class="tm4">10:00 AM CT</b>
+                      <b class="tm5">11:00 AM CT</b>
+                      <b class="tm6">12:00 PM CT</b>
+                      <b class="tm7">1:00 PM CT</b>
+                      <b class="tm8">2:00 PM CT</b>
+                      <b class="tm9">3:00 PM CT</b>
+                      <b class="tm10">4:00 PM CT</b>
+                      <b class="tm11">5:00 PM CT</b>
+                      <b class="tm12">6:00 PM CT</b>
+                      <b class="tm13">7:00 PM CT</b>
+                      <b class="tm14">8:00 PM CT</b>
+                      <b class="tm15">9:00 PM CT</b>
+                      <b class="tm16">10:00 PM CT</b>
+                  </span>
+</dd></div>
+                  <div><dt>Seats</dt><dd class="swapbox">
+                      <b class="c-1">1</b>
+                      <b class="c-2">2</b>
+                      <b class="c-3">3</b>
+                      <b class="c-4">4</b>
+                      <b class="c-5">5</b>
+                      <b class="c-6">6</b>
+                      <b class="c-7">7</b>
+                      <b class="c-8">8</b>
+                      <b class="c-9">9</b>
+                      <b class="c-10">10</b>
+                      <b class="c-11">11</b>
+                      <b class="c-12">12</b>
+                      <b class="c-13">13</b>
+                      <b class="c-14">14</b>
+                      <b class="c-15">15</b>
+                      <b class="c-16">16</b>
+                      <b class="c-17">17</b>
+                      <b class="c-18">18</b>
+                      <b class="c-19">19</b>
+                      <b class="c-20">20</b>
+                      <b class="c-21">21</b>
+                      <b class="c-22">22</b>
+                      <b class="c-23">23</b>
+                      <b class="c-24">24</b>
+                      <b class="c-25">25</b>
+                  </dd></div>
+                  <div class="co-paid-total"><dt>Paid</dt><dd class="swapbox">
+                    <b class="v-staff-1">$3.00</b>
+                    <b class="v-staff-2">$6.00</b>
+                    <b class="v-staff-3">$9.00</b>
+                    <b class="v-staff-4">$12.00</b>
+                    <b class="v-staff-5">$15.00</b>
+                    <b class="v-staff-6">$18.00</b>
+                    <b class="v-staff-7">$21.00</b>
+                    <b class="v-staff-8">$24.00</b>
+                    <b class="v-staff-9">$27.00</b>
+                    <b class="v-staff-10">$30.00</b>
+                    <b class="v-staff-11">$33.00</b>
+                    <b class="v-staff-12">$36.00</b>
+                    <b class="v-staff-13">$39.00</b>
+                    <b class="v-staff-14">$42.00</b>
+                    <b class="v-staff-15">$45.00</b>
+                    <b class="v-staff-16">$48.00</b>
+                    <b class="v-staff-17">$51.00</b>
+                    <b class="v-staff-18">$54.00</b>
+                    <b class="v-staff-19">$57.00</b>
+                    <b class="v-staff-20">$60.00</b>
+                    <b class="v-staff-21">$63.00</b>
+                    <b class="v-staff-22">$66.00</b>
+                    <b class="v-staff-23">$69.00</b>
+                    <b class="v-staff-24">$72.00</b>
+                    <b class="v-staff-25">$75.00</b>
+                    <b class="v-student-1">$5.00</b>
+                    <b class="v-student-2">$10.00</b>
+                    <b class="v-student-3">$15.00</b>
+                    <b class="v-student-4">$20.00</b>
+                    <b class="v-student-5">$25.00</b>
+                    <b class="v-student-6">$30.00</b>
+                    <b class="v-student-7">$35.00</b>
+                    <b class="v-student-8">$40.00</b>
+                    <b class="v-student-9">$45.00</b>
+                    <b class="v-student-10">$50.00</b>
+                    <b class="v-student-11">$55.00</b>
+                    <b class="v-student-12">$60.00</b>
+                    <b class="v-student-13">$65.00</b>
+                    <b class="v-student-14">$70.00</b>
+                    <b class="v-student-15">$75.00</b>
+                    <b class="v-student-16">$80.00</b>
+                    <b class="v-student-17">$85.00</b>
+                    <b class="v-student-18">$90.00</b>
+                    <b class="v-student-19">$95.00</b>
+                    <b class="v-student-20">$100.00</b>
+                    <b class="v-student-21">$105.00</b>
+                    <b class="v-student-22">$110.00</b>
+                    <b class="v-student-23">$115.00</b>
+                    <b class="v-student-24">$120.00</b>
+                    <b class="v-student-25">$125.00</b>
+                    <b class="v-other-1">$7.00</b>
+                    <b class="v-other-2">$14.00</b>
+                    <b class="v-other-3">$21.00</b>
+                    <b class="v-other-4">$28.00</b>
+                    <b class="v-other-5">$35.00</b>
+                    <b class="v-other-6">$42.00</b>
+                    <b class="v-other-7">$49.00</b>
+                    <b class="v-other-8">$56.00</b>
+                    <b class="v-other-9">$63.00</b>
+                    <b class="v-other-10">$70.00</b>
+                    <b class="v-other-11">$77.00</b>
+                    <b class="v-other-12">$84.00</b>
+                    <b class="v-other-13">$91.00</b>
+                    <b class="v-other-14">$98.00</b>
+                    <b class="v-other-15">$105.00</b>
+                    <b class="v-other-16">$112.00</b>
+                    <b class="v-other-17">$119.00</b>
+                    <b class="v-other-18">$126.00</b>
+                    <b class="v-other-19">$133.00</b>
+                    <b class="v-other-20">$140.00</b>
+                    <b class="v-other-21">$147.00</b>
+                    <b class="v-other-22">$154.00</b>
+                    <b class="v-other-23">$161.00</b>
+                    <b class="v-other-24">$168.00</b>
+                    <b class="v-other-25">$175.00</b>
+                  </dd></div>
+                </dl>
+                <label class="btn btn-wide co-close" for="co-closed">Done</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="fares-sec" id="fares">
+    <div class="wrap">
+      <header class="sec-head"><h2>Fares</h2><p>One flat price per seat, any route, any distance. No transfer fees.</p></header>
+      <div class="cards">
+        <article class="card"><span class="tag">Staff</span><p class="big"><i>$</i>3<small>/seat</small></p>
+          <ul class="ticks"><li>Any campus-to-campus route</li><li>HCC employee ID required</li><li>Book up to 25 seats</li></ul></article>
+        <article class="card card-lead"><span class="tag tag-lead">Student</span><p class="big"><i>$</i>5<small>/seat</small></p>
+          <ul class="ticks"><li>Any campus-to-campus route</li><li>Valid HCC student ID required</li><li>Priority seating at peak hours</li></ul>
+          <span class="ribbon">Most booked</span></article>
+        <article class="card"><span class="tag">Others</span><p class="big"><i>$</i>7<small>/seat</small></p>
+          <ul class="ticks"><li>Guests, visitors and family</li><li>No ID required</li><li>Same hourly timetable</li></ul></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="camp-sec" id="campuses">
+    <div class="wrap">
+      <header class="sec-head"><h2>Every campus we serve</h2><p>20 campuses across 6 HCC colleges, all on the same hourly network.</p></header>
+      <div class="colleges">
+        <article class="college">
+          <h3>HCC Central College</h3>
+          <ul>
+            <li><b>Central Campus</b><span>Midtown / Third Ward</span></li>
+            <li><b>South Campus</b><span>South Houston</span></li>
+          </ul>
+        </article>
+        <article class="college">
+          <h3>HCC Coleman College for Health Sciences</h3>
+          <ul>
+            <li><b>Coleman Campus</b><span>Texas Medical Center</span></li>
+            <li><b>Coleman College at Midtown</b><span>Midtown</span></li>
+          </ul>
+        </article>
+        <article class="college">
+          <h3>HCC Northeast College</h3>
+          <ul>
+            <li><b>Acres Homes Campus</b><span>Acres Homes</span></li>
+            <li><b>Automotive Technology Training Center</b><span>Northeast Houston</span></li>
+            <li><b>Northeast Campus</b><span>Northeast Houston</span></li>
+            <li><b>North Forest Campus</b><span>North Forest</span></li>
+            <li><b>Northline Campus</b><span>Northline</span></li>
+          </ul>
+        </article>
+        <article class="college">
+          <h3>HCC Northwest College</h3>
+          <ul>
+            <li><b>Alief Bissonnet Campus</b><span>Alief</span></li>
+            <li><b>Alief Hayes Campus</b><span>Alief</span></li>
+            <li><b>Katy Campus</b><span>Katy</span></li>
+            <li><b>Spring Branch Campus</b><span>Spring Branch</span></li>
+            <li><b>West Houston Institute</b><span>West Houston</span></li>
+          </ul>
+        </article>
+        <article class="college">
+          <h3>HCC Southeast College</h3>
+          <ul>
+            <li><b>Eastside Campus</b><span>Southeast Houston</span></li>
+            <li><b>Felix Fraga Academic Campus</b><span>Southeast Houston</span></li>
+          </ul>
+        </article>
+        <article class="college">
+          <h3>HCC Southwest College</h3>
+          <ul>
+            <li><b>Brays Oaks Campus</b><span>Southwest Houston</span></li>
+            <li><b>Missouri City Campus</b><span>Missouri City</span></li>
+            <li><b>Stafford Campus</b><span>Stafford</span></li>
+            <li><b>West Loop Campus</b><span>Near Galleria / Bellaire</span></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="wrap">
+      <header class="sec-head"><h2>How it works</h2><p>Three steps, about a minute.</p></header>
+      <ol class="steps">
+        <li><span class="num">1</span><h3>Pick your route</h3><p>Choose where you are leaving from and where you need to be. Every campus connects to every other campus.</p></li>
+        <li><span class="num">2</span><h3>Choose a departure</h3><p>Buses leave on the hour, from 6:00 AM to 10:00 PM Central Time. Pick the hour that fits your timetable.</p></li>
+        <li><span class="num">3</span><h3>Pay and board</h3><p>Up to 25 seats in one booking. Show the pass on your phone with your HCC ID.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <div class="wrap">
+      <header class="sec-head"><h2>Contact us</h2><p>Questions about a booking, a route or a refund? Reach the shuttle office.</p></header>
+      <div class="ct-grid">
+        <a class="ct" href="https://maps.google.com/?q=1300+Holman+St,+Houston,+TX+77004" target="_blank" rel="noopener">
+          <span class="ct-ico"><svg viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></span>
+          <span class="ct-k">Address</span>
+          <span class="ct-v">1300 Holman St<br>Houston, TX 77004</span>
+        </a>
+        <a class="ct" href="tel:+17137182000">
+          <span class="ct-ico"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a1.5 1.5 0 0 1-1.6 1.5C10.9 20 4 13.1 3.5 5.6A1.5 1.5 0 0 1 5 4z"/></svg></span>
+          <span class="ct-k">Phone</span>
+          <span class="ct-v">(713) 718-2000</span>
+        </a>
+        <a class="ct" href="mailto:metrobus@hccs.edu">
+          <span class="ct-ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg></span>
+          <span class="ct-k">Email</span>
+          <span class="ct-v">metrobus@hccs.edu</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="foot-brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="16" rx="4"/><rect x="7" y="9" width="7" height="6" rx="1.5" class="w"/><rect x="18" y="9" width="7" height="6" rx="1.5" class="w"/><circle cx="10" cy="24" r="3"/><circle cx="22" cy="24" r="3"/></svg></span>
+      <p><b>HCC Metro Bus</b><br>Campus shuttle for Houston Community College.</p></div>
+    <nav class="foot-links" aria-label="Footer"><a href="#book">Book a seat</a><a href="#fares">Fares</a><a href="#campuses">Campuses</a><a href="#how">How it works</a><a href="#contact">Contact us</a></nav>
+    <p class="foot-note">Student project — not an official Houston Community College service.</p>
+  </div>
+</footer>
+
+</body>
+</html>
